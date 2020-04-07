@@ -4,10 +4,10 @@ namespace LaravelCode\Middleware\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
-class OAuthClient extends Facade
+class HttpClient extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'OAuthClient';
+        return 'HttpClient';
     }
 }

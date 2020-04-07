@@ -1,6 +1,6 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Exceptions;
+namespace LaravelCode\Middleware\Exceptions;
 
 class OAuthTokenInvalid extends \Exception
 {

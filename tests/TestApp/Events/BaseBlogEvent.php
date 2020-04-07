@@ -3,7 +3,7 @@
 namespace TestApp\Events;
 
 use Illuminate\Http\Request;
-use LemonCMS\LaravelCrud\Events\CrudEvent;
+use LaravelCode\Middleware\Events\CrudEvent;
 
 class BaseBlogEvent extends CrudEvent
 {

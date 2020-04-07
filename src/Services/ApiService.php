@@ -1,6 +1,6 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Services;
+namespace LaravelCode\Middleware\Services;
 
 abstract class ApiService
 {

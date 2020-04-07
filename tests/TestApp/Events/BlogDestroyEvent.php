@@ -2,7 +2,7 @@
 
 namespace TestApp\Events;
 
-use LemonCMS\LaravelCrud\Events\CrudEvent;
+use LaravelCode\Middleware\Events\CrudEvent;
 
 class BlogDestroyEvent extends CrudEvent
 {

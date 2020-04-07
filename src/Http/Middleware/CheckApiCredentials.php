@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace LaravelCode\Middleware\Http\Middleware;
 
 use Auth;
 use Illuminate\Auth\AuthenticationException;

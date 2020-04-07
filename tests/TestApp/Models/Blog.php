@@ -5,7 +5,7 @@ namespace TestApp\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use LemonCMS\LaravelCrud\Model\CrudTrait;
+use LaravelCode\Middleware\Model\CrudTrait;
 
 class Blog extends Model
 {

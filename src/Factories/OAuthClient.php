@@ -1,10 +1,11 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Factories;
+namespace LaravelCode\Middleware\Factories;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Auth\Access\AuthorizationException;
+use Request;
 
 class OAuthClient
 {
@@ -20,12 +21,18 @@ class OAuthClient
      * @var string
      */
     protected $token_type;
+    /**
+     * @var Client
+     */
+    protected $httpClient;
 
     /**
      * OAuthClient constructor.
+     * @param Client $httpClient
      */
-    public function __construct()
+    public function __construct($httpClient)
     {
+        $this->httpClient = $httpClient;
         $this->setUp();
     }
 
@@ -34,16 +41,13 @@ class OAuthClient
      */
     public function setUp()
     {
-        // Token is about to expire refresh it.
-        // Let's hope the servers have no time difference more then one minute.
+        // Token is about to expire we will request a new token.
         if (\Cache::has('apiClient') && $this->access_token && $this->expires_in <= time() + 60) {
             \Cache::clear('apiClient');
         }
 
         $response = \Cache::remember('apiClient', 300, function () {
-            $guzzle = new Client();
-
-            $response = $guzzle->post(config('oauth.host').config('oauth.token'), [
+            $response = $this->httpClient->post(config('oauth.host').config('oauth.token'), [
                 'form_params' => [
                     'grant_type' => 'client_credentials',
                     'client_id' => config('oauth.client_id'),
@@ -78,19 +82,17 @@ class OAuthClient
      */
     public function client(string $method, string $domain, string $path, array $params = [])
     {
-        $user = \Request::user();
         $params = array_replace_recursive([
             'headers' => [
                 'Authorization' => 'Bearer '.$this->access_token,
                 'Accept' => 'application/json',
-                'X-USER-ID' => $user ? $user->id : null,
+                'X-USER-ID' => Request::user(),
                 'X-CLIENT-ID' => config('oauth.client_id'),
             ],
         ], $params);
 
-        $guzzle = new Client();
         /** @var Response $response */
-        $response = call_user_func([$guzzle, $method], $domain.$path, $params);
+        $response = call_user_func([$this->httpClient, $method], $domain.$path, $params);
 
         if ($response->getStatusCode() < 200 || $response->getStatusCode() > 299) {
             throw new \Exception('Shit hit the fan');

@@ -2,7 +2,7 @@
 
 namespace TestApp\Listeners;
 
-use LemonCMS\LaravelCrud\Listeners\CrudListener;
+use LaravelCode\Middleware\Listeners\CrudListener;
 use TestApp\Events\BlogDestroyEvent;
 use TestApp\Events\BlogRestoreEvent;
 

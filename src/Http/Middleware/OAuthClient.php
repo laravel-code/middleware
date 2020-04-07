@@ -1,6 +1,6 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Http\Middleware;
+namespace LaravelCode\Middleware\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

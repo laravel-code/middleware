@@ -1,10 +1,10 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Http\Middleware;
+namespace LaravelCode\Middleware\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use LemonCMS\LaravelCrud\Exceptions\OAuthTokenExpired;
+use LaravelCode\Middleware\Exceptions\OAuthTokenExpired;
 
 class OAuth extends AbstractOAuthMiddleware
 {
@@ -14,7 +14,7 @@ class OAuth extends AbstractOAuthMiddleware
      * @param mixed ...$scopes
      * @return mixed
      * @throws OAuthTokenExpired
-     * @throws \LemonCMS\LaravelCrud\Exceptions\OAuthTokenInvalid
+     * @throws \LaravelCode\Middleware\Exceptions\OAuthTokenInvalid
      */
     public function handle(Request $request, Closure $next, ...$scopes)
     {

@@ -1,16 +1,16 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Http\Middleware;
+namespace LaravelCode\Middleware\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use LaravelCode\Middleware\Exceptions\OAuthScopeInvalid;
+use LaravelCode\Middleware\Exceptions\OAuthTokenExpired;
+use LaravelCode\Middleware\Exceptions\OAuthTokenInvalid;
+use LaravelCode\Middleware\Services\AccountService;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
-use LemonCMS\LaravelCrud\Exceptions\OAuthScopeInvalid;
-use LemonCMS\LaravelCrud\Exceptions\OAuthTokenExpired;
-use LemonCMS\LaravelCrud\Exceptions\OAuthTokenInvalid;
-use LemonCMS\LaravelCrud\Services\AccountService;
 
 abstract class AbstractOAuthMiddleware
 {
@@ -36,7 +36,7 @@ abstract class AbstractOAuthMiddleware
     protected function handleUser(Request $request, $scopes)
     {
         $token = (new Parser())->parse($request->bearerToken());
-        $publicKey = new Key('file://'.storage_path('oauth-public.key'));
+        $publicKey = new Key('file://'.config('oauth.public_key'));
 
         if ($token->verify(new Sha256(), $publicKey) === false) {
             throw new OAuthTokenInvalid();

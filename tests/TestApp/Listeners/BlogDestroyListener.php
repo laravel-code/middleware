@@ -2,7 +2,7 @@
 
 namespace TestApp\Listeners;
 
-use LemonCMS\LaravelCrud\Listeners\CrudListener;
+use LaravelCode\Middleware\Listeners\CrudListener;
 use TestApp\Events\BlogDestroyEvent;
 
 class BlogDestroyListener extends CrudListener

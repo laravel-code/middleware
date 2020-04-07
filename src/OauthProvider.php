@@ -1,10 +1,10 @@
 <?php
 
-namespace LemonCMS\LaravelCrud;
+namespace LaravelCode\Middleware;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
-use LemonCMS\LaravelCrud\Factories\OAuthClient;
 
 class OauthProvider extends ServiceProvider
 {
@@ -16,7 +16,7 @@ class OauthProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            __DIR__.'/config/middleware.php', 'middleware'
+            __DIR__.'/config/oauth.php', 'oauth'
         );
     }
 
@@ -27,8 +27,12 @@ class OauthProvider extends ServiceProvider
      */
     public function boot()
     {
+        App::bind('HttpClient', function () {
+            return new \LaravelCode\Middleware\Factories\HttpClient;
+        });
+
         App::bind('OAuthClient', function () {
-            return new OAuthClient;
+            return new \LaravelCode\Middleware\Factories\OAuthClient(\HttpClient::getClient());
         });
     }
 }

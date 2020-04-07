@@ -69,7 +69,7 @@ JSON;
     protected function getPackageProviders($app)
     {
         return [
-            'LemonCMS\LaravelCrud\ServiceProvider',
+            'LaravelCode\Middleware\ServiceProvider',
         ];
     }
 

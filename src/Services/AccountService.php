@@ -1,6 +1,6 @@
 <?php
 
-namespace LemonCMS\LaravelCrud\Services;
+namespace LaravelCode\Middleware\Services;
 
 class AccountService extends ApiService
 {

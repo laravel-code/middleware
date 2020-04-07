@@ -43,15 +43,4 @@ class EventServiceProvider extends ServiceProvider
             realpath($this->app->basePath('../../../../tests/TestApp/Listeners')),
         ];
     }
-
-//    public function boot()
-//    {
-//        parent::boot();
-//
-//        Event::listen('*', function ($eventName, array $data) {
-//            echo ($eventName."\r\n");
-//            echo ($eventName) . "\r\n";
-//            return true;
-//        });
-//    }
 }
