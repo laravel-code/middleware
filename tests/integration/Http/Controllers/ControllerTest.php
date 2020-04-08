@@ -2,8 +2,6 @@
 
 namespace Tester\Http\Controllers;
 
-use Firebase\JWT\JWT;
-use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -13,19 +11,20 @@ use LaravelCode\Middleware\Facades\HttpClient;
 use LaravelCode\Middleware\Facades\OAuthClient;
 use Mockery;
 use Orchestra\Testbench\TestCase;
+use Test\TestTrait;
 
 class ControllerTest extends TestCase
 {
+    use TestTrait;
+
     public function testClientToken()
     {
-        $this->createClientToken();
-
         $requests = [];
         $history = Middleware::history($requests);
 
         $stack = HandlerStack::create(
             new MockHandler([
-                new Response(200, ['X-Foo' => 'Bar'], json_encode([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
                     'access_token' => $this->createClientToken(),
                     'expires_in' => time() + 3600,
                     'token_type' => 'jwt',
@@ -33,10 +32,7 @@ class ControllerTest extends TestCase
             ])
         );
         $stack->push($history);
-
-        HttpClient::shouldReceive('getClient')->andReturn(
-            new Client(['handler' => $stack])
-        );
+        $this->mockHttpClient($stack);
 
         $response = $this->getJson('api/client');
         $this->assertTrue($response->json('ok'));
@@ -53,33 +49,25 @@ class ControllerTest extends TestCase
         ]);
     }
 
-    public function createClientToken($scopes = 'profile')
+    public function testClientTokenContentTypeException()
     {
-        $privateKey = file_get_contents(realpath(__DIR__.'/../../../oauth-private.key'));
+        $requests = [];
+        $history = Middleware::history($requests);
 
-        $payload = [
-            'iss' => 'accounts.org',
-            'aud' => 'accounts.com',
-            'iat' => time(),
-            'nbf' => time(),
-            'exp' => time() + 3600,
-            'scopes' => explode(' ', $scopes),
-        ];
+        $stack = HandlerStack::create(
+            new MockHandler([
+                new Response(200, ['Content-Type' => 'text/html'], 'bogus data'),
+            ])
+        );
+        $stack->push($history);
+        $this->mockHttpClient($stack);
 
-        return JWT::encode($payload, $privateKey, 'RS256');
+        $response = $this->getJson('api/client');
+        $this->assertEquals('JSON accepted but received text/html', $response->exception->getMessage());
+        $this->assertEquals(500, $response->exception->getCode());
     }
 
-    public function assertRequests($requests = [], $assertions = [])
-    {
-        $this->assertEquals(count($requests), count($assertions), 'All requests should have an assertion.');
-
-        foreach ($requests as $request) {
-            $callback = array_shift($assertions);
-            $callback($request['request'], $request['response'], $request['error'], $request['options']);
-        }
-    }
-
-    public function testUserToken()
+    public function testClientDenied()
     {
         $this->createClientToken();
 
@@ -88,23 +76,38 @@ class ControllerTest extends TestCase
 
         $stack = HandlerStack::create(
             new MockHandler([
-                new Response(200, [], json_encode([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode(null)),
+            ])
+        );
+        $stack->push($history);
+        $this->mockHttpClient($stack);
+
+        $response = $this->getJson('api/client');
+        $this->assertEquals('Api client could not get authorized', $response->exception->getMessage());
+        $this->assertEquals(401, $response->exception->getCode());
+    }
+
+    public function testOauthToken()
+    {
+        $requests = [];
+        $history = Middleware::history($requests);
+
+        $stack = HandlerStack::create(
+            new MockHandler([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
                     'access_token' => $this->createClientToken(),
                     'expires_in' => time() + 3600,
                     'token_type' => 'jwt',
                 ])),
-                new Response(200, [], json_encode([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
                     'id' => 1,
                 ])),
             ])
         );
         $stack->push($history);
+        $this->mockHttpClient($stack);
 
-        HttpClient::shouldReceive('getClient')->andReturn(
-            new Client(['handler' => $stack])
-        );
-
-        $response = $this->getJson('api/users', ['Authorization' => 'Bearer '.$this->createUserToken()]);
+        $response = $this->getJson('api/oauth', ['Authorization' => 'Bearer '.$this->createUserToken()]);
         $this->assertTrue($response->json('ok'));
         $this->assertEquals(200, $response->getStatusCode());
 
@@ -123,21 +126,31 @@ class ControllerTest extends TestCase
         ]);
     }
 
-    public function createUserToken($scopes = 'profile')
+    public function testUserToken()
     {
-        $privateKey = file_get_contents(realpath(__DIR__.'/../../../oauth-private.key'));
+        $requests = [];
+        $history = Middleware::history($requests);
 
-        $payload = [
-            'aud' => 2, // GRANT ID
-            'sub' => 1, // USER ID
-            'iss' => 'accounts.org',
-            'iat' => time(),
-            'nbf' => time(),
-            'exp' => time() + 3600,
-            'scopes' => explode(' ', $scopes),
-        ];
+        $stack = HandlerStack::create(
+            new MockHandler([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                    'id' => 1,
+                ])),
+            ])
+        );
+        $stack->push($history);
+        $this->mockHttpClient($stack);
 
-        return JWT::encode($payload, $privateKey, 'RS256');
+        $response = $this->getJson('api/user', ['Authorization' => 'Bearer '.$this->createUserToken()]);
+        $this->assertTrue($response->json('ok'));
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $this->assertRequests($requests, [
+            function (Request $request) {
+                $this->assertEquals('/api/profile', $request->getUri()->getPath());
+                $this->assertNotEmpty($request->getHeaderLine('Authorization'));
+            },
+        ]);
     }
 
     public function tearDown(): void
@@ -179,7 +192,7 @@ class ControllerTest extends TestCase
             return response()->json(['ok' => true]);
         });
 
-        $app['router']->middleware(['oauth.user'])->get('api/users', function () {
+        $app['router']->middleware(['oauth.user'])->get('api/user', function () {
             return response()->json(['ok' => true]);
         });
 

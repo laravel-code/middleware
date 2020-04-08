@@ -5,7 +5,9 @@ namespace LaravelCode\Middleware\Factories;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Auth\Access\AuthorizationException;
-use Request;
+use Illuminate\Cache\Repository;
+use Illuminate\Http\Request;
+use LaravelCode\Middleware\Exceptions\OauthClientContentTypeException;
 
 class OAuthClient
 {
@@ -25,15 +27,26 @@ class OAuthClient
      * @var Client
      */
     protected $httpClient;
+    /**
+     * @var Request
+     */
+    protected $request;
+    /**
+     * @var Repository
+     */
+    protected $cache;
 
     /**
      * OAuthClient constructor.
-     * @param Client $httpClient
+     * @param $httpClient
+     * @param $request
+     * @param $cache
      */
-    public function __construct($httpClient)
+    public function __construct($httpClient, $request, $cache)
     {
         $this->httpClient = $httpClient;
-        $this->setUp();
+        $this->request = $request;
+        $this->cache = $cache;
     }
 
     /**
@@ -42,11 +55,11 @@ class OAuthClient
     public function setUp()
     {
         // Token is about to expire we will request a new token.
-        if (\Cache::has('apiClient') && $this->access_token && $this->expires_in <= time() + 60) {
-            \Cache::clear('apiClient');
+        if ($this->cache->has('apiClient') && $this->access_token && $this->expires_in <= time() + 60) {
+            $this->cache->forget('apiClient');
         }
 
-        $response = \Cache::remember('apiClient', 300, function () {
+        $response = $this->cache->remember('apiClient', 300, function () {
             $response = $this->httpClient->post(config('oauth.host').config('oauth.token'), [
                 'form_params' => [
                     'grant_type' => 'client_credentials',
@@ -55,11 +68,13 @@ class OAuthClient
                     'scope' => config('oauth.scopes'),
                 ],
             ]);
-
+            if (! in_array('application/json', $response->getHeader('Content-Type'))) {
+                throw new OauthClientContentTypeException('JSON accepted but received '.$response->getHeaderLine('Content-Type'), 500);
+            }
             $data = json_decode((string) $response->getBody());
 
-            if (! $data->access_token) {
-                throw new AuthorizationException('Api client could not get authorized');
+            if (! $data || ! $data->access_token) {
+                throw new AuthorizationException('Api client could not get authorized', 401);
             }
 
             return $data;
@@ -86,18 +101,14 @@ class OAuthClient
             'headers' => [
                 'Authorization' => 'Bearer '.$this->access_token,
                 'Accept' => 'application/json',
-                'X-USER-ID' => Request::user(),
+                'X-USER-ID' => $this->request->user(),
                 'X-CLIENT-ID' => config('oauth.client_id'),
             ],
         ], $params);
 
         /** @var Response $response */
         $response = call_user_func([$this->httpClient, $method], $domain.$path, $params);
-
-        if ($response->getStatusCode() < 200 || $response->getStatusCode() > 299) {
-            throw new \Exception('Shit hit the fan');
-        }
-        if (in_array($response->getHeader('Content-Type'), ['application/json'])) {
+        if (in_array('application/json', $response->getHeader('Content-Type'))) {
             return json_decode((string) $response->getBody());
         }
 

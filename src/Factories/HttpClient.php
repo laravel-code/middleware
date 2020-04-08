@@ -10,9 +10,15 @@ class HttpClient
 
     /**
      * HttpClient constructor.
+     * @param array $options
      */
-    public function __construct()
+    public function __construct($options = [])
     {
-        $this->client = new Client();
+        $this->client = new Client($options);
+    }
+
+    public function getClient()
+    {
+        return $this->client;
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use LaravelCode\Middleware\Exceptions\OAuthScopeInvalid;
 use LaravelCode\Middleware\Exceptions\OAuthTokenExpired;
 use LaravelCode\Middleware\Exceptions\OAuthTokenInvalid;
+use LaravelCode\Middleware\Factories\OAuthClient as Factory;
 use LaravelCode\Middleware\Services\AccountService;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
@@ -14,6 +15,27 @@ use Lcobucci\JWT\Signer\Rsa\Sha256;
 
 abstract class AbstractOAuthMiddleware
 {
+    /**
+     * @var Factory
+     */
+    private $client;
+
+    /**
+     * @var AccountService
+     */
+    private $accountService;
+
+    /**
+     * AbstractOAuthMiddleware constructor.
+     * @param Factory $client
+     * @param AccountService $accountService
+     */
+    public function __construct(Factory $client, AccountService $accountService)
+    {
+        $this->client = $client;
+        $this->accountService = $accountService;
+    }
+
     /**
      * @param Request $request
      * @param Closure $next
@@ -24,7 +46,7 @@ abstract class AbstractOAuthMiddleware
 
     protected function handleClient()
     {
-        \OAuthClient::setUp();
+        $this->client->setup();
     }
 
     /**
@@ -58,7 +80,7 @@ abstract class AbstractOAuthMiddleware
             });
         }
 
-        $user = (new AccountService)->getUser($request->bearerToken());
+        $user = $this->accountService->getProfile($request->bearerToken());
         $request->setUserResolver(function () use ($user) {
             return $user;
         });

@@ -2,8 +2,24 @@
 
 namespace LaravelCode\Middleware\Services;
 
+use LaravelCode\Middleware\Factories\OAuthClient;
+
 abstract class ApiService
 {
+    /**
+     * @var OAuthClient
+     */
+    protected $service;
+
+    /**
+     * ApiService constructor.
+     * @param OAuthClient $service
+     */
+    public function __construct(OAuthClient $service)
+    {
+        $this->service = $service;
+    }
+
     /**
      * @param $resource
      * @param array $query
@@ -16,8 +32,13 @@ abstract class ApiService
             'query' => $query,
         ];
 
-        return \OAuthClient::client('get', $this->getBaseUrl(), $resource, $params);
+        return $this->service->client('get', $this->getBaseUrl(), $resource, $params);
     }
+
+    /**
+     * @return mixed
+     */
+    abstract protected function getBaseUrl();
 
     /**
      * @param $resource
@@ -32,7 +53,7 @@ abstract class ApiService
             'query' => $query,
         ];
 
-        return \OAuthClient::client('get', $this->getBaseUrl(), `$resource/$id`, $params);
+        return $this->service->client('get', $this->getBaseUrl(), `$resource/$id`, $params);
     }
 
     /**
@@ -43,7 +64,7 @@ abstract class ApiService
      */
     public function delete($resource, $id)
     {
-        return \OAuthClient::client('delete', $this->getBaseUrl(), `$resource/$id`);
+        return $this->service->client('delete', $this->getBaseUrl(), `$resource/$id`);
     }
 
     /**
@@ -59,7 +80,7 @@ abstract class ApiService
             'form_params' => $formParams,
         ];
 
-        return \OAuthClient::client('put', $this->getBaseUrl(), `$resource/$id`, $params);
+        return $this->service->client('put', $this->getBaseUrl(), `$resource/$id`, $params);
     }
 
     /**
@@ -74,7 +95,7 @@ abstract class ApiService
             'form_params' => $formParams,
         ];
 
-        return \OAuthClient::client('post', $this->getBaseUrl(), $resource, $params);
+        return $this->service->client('post', $this->getBaseUrl(), $resource, $params);
     }
 
     /**
@@ -94,11 +115,6 @@ abstract class ApiService
             'headers' => $headers,
         ];
 
-        return \OAuthClient::client($method, $this->getBaseUrl(), $path, $params);
+        return $this->service->client($method, $this->getBaseUrl(), $path, $params);
     }
-
-    /**
-     * @return mixed
-     */
-    abstract protected function getBaseUrl();
 }

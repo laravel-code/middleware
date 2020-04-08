@@ -12,11 +12,16 @@ class OAuthClient extends AbstractOAuthMiddleware
      * @param Closure $next
      * @param mixed ...$scopes
      * @return mixed
+     * @throws \Exception
      */
     public function handle(Request $request, Closure $next, ...$scopes)
     {
-        $this->handleClient();
+        try {
+            $this->handleClient();
 
-        return $next($request);
+            return $next($request);
+        } catch (\Exception $exception) {
+            throw $exception;
+        }
     }
 }

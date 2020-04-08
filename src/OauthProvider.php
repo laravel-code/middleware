@@ -2,9 +2,12 @@
 
 namespace LaravelCode\Middleware;
 
-use GuzzleHttp\Client;
-use Illuminate\Support\Facades\App;
+use Illuminate\Cache\Repository;
+use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
+use LaravelCode\Middleware\Factories\HttpClient;
+use LaravelCode\Middleware\Factories\OAuthClient;
+use LaravelCode\Middleware\Services\AccountService;
 
 class OauthProvider extends ServiceProvider
 {
@@ -27,12 +30,20 @@ class OauthProvider extends ServiceProvider
      */
     public function boot()
     {
-        App::bind('HttpClient', function () {
-            return new \LaravelCode\Middleware\Factories\HttpClient;
+        app()->bind(HttpClient::class, function () {
+            return (new HttpClient)->getClient();
         });
 
-        App::bind('OAuthClient', function () {
-            return new \LaravelCode\Middleware\Factories\OAuthClient(\HttpClient::getClient());
+        app()->bind(OAuthClient::class, function () {
+            return new OAuthClient(
+                app()->get(HttpClient::class),
+                app()->get(Request::class),
+                app()->get(Repository::class)
+            );
+        });
+
+        app()->bind(AccountService::class, function () {
+            return new AccountService(app()->get(OAuthClient::class));
         });
     }
 }

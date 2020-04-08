@@ -4,7 +4,7 @@ namespace LaravelCode\Middleware\Services;
 
 class AccountService extends ApiService
 {
-    public function getUser($token)
+    public function getProfile($token)
     {
         $headers = [
             'Authorization' => 'Bearer '.$token,
@@ -12,11 +12,6 @@ class AccountService extends ApiService
         ];
 
         return $this->request('get', 'profile', [], [], $headers);
-    }
-
-    public function getClient()
-    {
-        return $this->request('get', 'client');
     }
 
     protected function getBaseUrl()

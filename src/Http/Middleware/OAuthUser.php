@@ -14,6 +14,7 @@ class OAuthUser extends AbstractOAuthMiddleware
      * @param mixed ...$scopes
      * @return mixed
      * @throws OAuthTokenExpired
+     * @throws \LaravelCode\Middleware\Exceptions\OAuthTokenInvalid
      */
     public function handle(Request $request, Closure $next, ...$scopes)
     {
