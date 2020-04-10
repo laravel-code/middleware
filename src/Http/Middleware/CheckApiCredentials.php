@@ -4,6 +4,8 @@ namespace LaravelCode\Middleware\Http\Middleware;
 
 use Auth;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Contracts\Auth\Factory;
 use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 use Request;
 use Session;
@@ -17,7 +19,7 @@ class CheckApiCredentials extends CheckClientCredentials
      * @throws \Laravel\Passport\Exceptions\MissingScopeException
      */
     protected function validate($psr, $scopes)
-    {
+    {   dd($psr);
         $token = $this->repository->find($psr->getAttribute('oauth_access_token_id'));
 
         if (! $token) {
@@ -27,7 +29,7 @@ class CheckApiCredentials extends CheckClientCredentials
         $this->validateScopes($token, $scopes);
         $clientId = $psr->getAttribute('oauth_client_id', null);
         $userId = $psr->getAttribute('oauth_user_id', null);
-        if ('array' !== Session::getDefaultDriver()) {
+        if ('array' === Session::getDefaultDriver()) {
             Session::put('X_OAUTH_CLIENT_ID', $clientId);
             Session::put('X_OAUTH_USER_ID', $userId);
         }

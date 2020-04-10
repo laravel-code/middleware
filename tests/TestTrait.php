@@ -57,4 +57,8 @@ trait TestTrait
             return (new HttpClient(['handler' => $stack]))->getClient();
         });
     }
+
+    public function setStoragePath($app) {
+        $app->useStoragePath(dirname(__FILE__));
+    }
 }
