@@ -3,6 +3,7 @@
 namespace TestApp;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Laravel\Passport\Passport;
 use TestApp\Models\Blog;
 use TestApp\Models\Policies\BlogPolicy;
 
@@ -14,7 +15,6 @@ class AuthServiceProvider extends ServiceProvider
      * @var array
      */
     protected $policies = [
-        Blog::class => BlogPolicy::class,
     ];
 
     /**
@@ -25,5 +25,12 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
+
+        Passport::routes();
+
+        Passport::tokensCan([
+            'profile' => 'Get profile current client',
+            'internal' => 'Get access internal client',
+        ]);
     }
 }

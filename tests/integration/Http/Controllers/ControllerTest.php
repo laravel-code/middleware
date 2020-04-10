@@ -7,11 +7,15 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Contracts\Session\Session;
+use Illuminate\Http\Request as ClientRequest;
 use LaravelCode\Middleware\Facades\HttpClient;
 use LaravelCode\Middleware\Facades\OAuthClient;
 use Mockery;
 use Orchestra\Testbench\TestCase;
 use Test\TestTrait;
+use TestApp\AuthServiceProvider;
+use TestApp\Models\User;
 
 class ControllerTest extends TestCase
 {
@@ -35,8 +39,8 @@ class ControllerTest extends TestCase
         $this->mockHttpClient($stack);
 
         $response = $this->getJson('api/client');
-        $this->assertTrue($response->json('ok'));
-        $this->assertEquals(200, $response->getStatusCode());
+        $response->assertJson(['ok' => true]);
+        $response->assertOk();
 
         $this->assertRequests($requests, [
             function (Request $request) {
@@ -153,6 +157,18 @@ class ControllerTest extends TestCase
         ]);
     }
 
+    public function testPassportApiCredentials()
+    {
+        $token = $this->createUserToken();
+        $response = $this->getJson('api/profile', [
+            'Accept' => 'application/json',
+            'Authorization' => 'Bearer '.$token,
+        ]);
+        $response->assertHeader('X_OAUTH_USER_ID', 1);
+        $response->assertHeader('X_OAUTH_CLIENT_ID', 2);
+        $response->assertJson(['id' => 1]);
+    }
+
     public function tearDown(): void
     {
         parent::tearDown();
@@ -167,6 +183,18 @@ class ControllerTest extends TestCase
         parent::setUp();
 
         $this->loadLaravelMigrations(['--database' => 'testing']);
+
+        // call migrations specific to our tests, e.g. to seed the db
+        // the path option should be an absolute path.
+
+        $this->loadMigrationsFrom([
+            '--database' => 'testing',
+        ]);
+
+        $this->loadMigrationsFrom([
+            '--database' => 'testing',
+            '--path' => realpath(__DIR__.'/../../../fixtures'),
+        ]);
     }
 
     /**
@@ -178,7 +206,11 @@ class ControllerTest extends TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
+        $this->setStoragePath($app);
+        $app['config']->set('app.key', 'base64:uJTCCZW1wsX8vRKGMRd3gUU+zzP/caRsxHilmWlZOkI=');
         $app['config']->set('database.default', 'testing');
+        $app['config']->set('auth.guards.api.driver', 'passport');
+        $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('oauth', [
             'host' => 'https://dummy.dummy',
             'token' => '/api/token',
@@ -199,6 +231,18 @@ class ControllerTest extends TestCase
         $app['router']->middleware(['oauth'])->get('api/oauth', function () {
             return response()->json(['ok' => true]);
         });
+
+        $app['router']->middleware(['oauth.api'])->get('api/profile', function (ClientRequest $request, Session $session) {
+            return response()->json($request->user(), 200, [
+                'X_OAUTH_CLIENT_ID' => $session->get('X_OAUTH_CLIENT_ID'),
+                'X_OAUTH_USER_ID' => $session->get('X_OAUTH_USER_ID'),
+            ]);
+        });
+
+        $app['router']->middleware(['oauth.api:admin'])->get('api/admin', function () {
+        });
+
+        $app['config']->set('app.debug', true);
     }
 
     /**
@@ -214,6 +258,8 @@ class ControllerTest extends TestCase
     protected function getPackageProviders($app)
     {
         return [
+            AuthServiceProvider::class,
+            'Laravel\Passport\PassportServiceProvider',
             'LaravelCode\Middleware\OauthProvider',
         ];
     }
