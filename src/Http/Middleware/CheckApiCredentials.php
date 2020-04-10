@@ -19,7 +19,7 @@ class CheckApiCredentials extends CheckClientCredentials
      * @throws \Laravel\Passport\Exceptions\MissingScopeException
      */
     protected function validate($psr, $scopes)
-    {   dd($psr);
+    {
         $token = $this->repository->find($psr->getAttribute('oauth_access_token_id'));
 
         if (! $token) {

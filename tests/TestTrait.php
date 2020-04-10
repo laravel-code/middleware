@@ -41,7 +41,7 @@ trait TestTrait
         $payload = [
             'aud' => 2, // GRANT ID
             'sub' => 1, // USER ID
-            'iss' => 'accounts.org',
+            'jti' => 'd8ebe93ce08347772a975e568264b685d391be7252872ab4697d4c98390e6d6d6c5ffb795ec05b53',
             'iat' => time(),
             'nbf' => time(),
             'exp' => $expires ?: time() + 3600,
@@ -58,7 +58,9 @@ trait TestTrait
         });
     }
 
-    public function setStoragePath($app) {
+    public function setStoragePath($app)
+    {
         $app->useStoragePath(dirname(__FILE__));
+        $app['config']->set('logging.channels.single.path', storage_path('logs').'/laravel.log');
     }
 }
