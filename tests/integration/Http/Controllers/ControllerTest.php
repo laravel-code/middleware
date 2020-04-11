@@ -260,7 +260,7 @@ class ControllerTest extends TestCase
         return [
             AuthServiceProvider::class,
             'Laravel\Passport\PassportServiceProvider',
-            'LaravelCode\Middleware\OauthProvider',
+            'LaravelCode\Middleware\MiddlewareProvider',
         ];
     }
 

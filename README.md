@@ -18,3 +18,12 @@ When making requests on the todo api, it will check with the users api if the ap
 to make requests with other microservices.
 
 If it does, it will return a bearer token that will be used when talking to other microservice api's
+
+
+# Installation
+
+```shell script
+composer require laravel-code/middleware
+```
+
+The ```middlewareServiceProvider``` will be automatically discovered bij laravel.

@@ -9,7 +9,7 @@ use LaravelCode\Middleware\Factories\HttpClient;
 use LaravelCode\Middleware\Factories\OAuthClient;
 use LaravelCode\Middleware\Services\AccountService;
 
-class OauthProvider extends ServiceProvider
+class MiddlewareProvider extends ServiceProvider
 {
     /**
      * Register any application services.
@@ -30,6 +30,12 @@ class OauthProvider extends ServiceProvider
      */
     public function boot()
     {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/config/oauth.php' => config_path('oauth.php'),
+            ], 'middleware-config');
+        }
+
         app()->bind(HttpClient::class, function () {
             return (new HttpClient)->getClient();
         });
