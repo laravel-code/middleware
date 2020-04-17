@@ -68,7 +68,7 @@ class OAuthClient
                     'scope' => config('oauth.scopes'),
                 ],
             ]);
-            if (! in_array('application/json', $response->getHeader('Content-Type'))) {
+            if (! stristr($response->getHeaderLine('Content-Type'), 'application/json')) {
                 throw new OauthClientContentTypeException('JSON accepted but received '.$response->getHeaderLine('Content-Type'), 500);
             }
             $data = json_decode((string) $response->getBody());
