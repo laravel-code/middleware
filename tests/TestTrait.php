@@ -3,7 +3,6 @@
 namespace Test;
 
 use Firebase\JWT\JWT;
-use GuzzleHttp\Client;
 use LaravelCode\Middleware\Factories\HttpClient;
 
 trait TestTrait
