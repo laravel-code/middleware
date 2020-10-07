@@ -1,6 +1,6 @@
 <?php
 
-namespace Tester\Http\Controllers;
+namespace Test\integration\Http\Controllers;
 
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -198,17 +198,14 @@ class ControllerTest extends TestCase
     }
 
     /**
-     * Define environment setup.
-     *
      * @param \Illuminate\Foundation\Application $app
-     *
-     * @return void
      */
     protected function getEnvironmentSetUp($app)
     {
         $this->setStoragePath($app);
         $app['config']->set('app.key', 'base64:uJTCCZW1wsX8vRKGMRd3gUU+zzP/caRsxHilmWlZOkI=');
         $app['config']->set('database.default', 'testing');
+        $app['config']->set('passport.storage.database.connection', 'testing');
         $app['config']->set('auth.guards.api.driver', 'passport');
         $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('oauth', [
