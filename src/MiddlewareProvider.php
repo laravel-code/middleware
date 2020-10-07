@@ -18,9 +18,7 @@ class MiddlewareProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/config/oauth.php', 'oauth'
-        );
+        $this->mergeConfigFrom($this->configPath(), 'oauth');
     }
 
     /**
@@ -31,9 +29,7 @@ class MiddlewareProvider extends ServiceProvider
     public function boot()
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/config/oauth.php' => config_path('oauth.php'),
-            ], 'middleware-config');
+            $this->publishes([$this->configPath() => config_path('oauth.php')], 'oauth');
         }
 
         app()->bind(HttpClient::class, function () {
@@ -51,5 +47,10 @@ class MiddlewareProvider extends ServiceProvider
         app()->bind(AccountService::class, function () {
             return new AccountService(app()->get(OAuthClient::class));
         });
+    }
+
+    protected function configPath()
+    {
+        return __DIR__.'/config/oauth.php';
     }
 }
