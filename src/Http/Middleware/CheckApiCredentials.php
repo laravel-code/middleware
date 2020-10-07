@@ -29,10 +29,11 @@ class CheckApiCredentials extends CheckClientCredentials
         $this->validateScopes($token, $scopes);
         $clientId = $psr->getAttribute('oauth_client_id', null);
         $userId = $psr->getAttribute('oauth_user_id', null);
-        if ('array' === Session::getDefaultDriver()) {
-            Session::put('X_OAUTH_CLIENT_ID', $clientId);
-            Session::put('X_OAUTH_USER_ID', $userId);
-        }
+
+        Request::merge([
+            'X_OAUTH_CLIENT_ID' => $clientId,
+            'X_OAUTH_USER_ID' => $userId,
+        ]);
 
         if (null !== $userId) {
             Auth::loginUsingId($userId);

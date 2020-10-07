@@ -231,8 +231,8 @@ class ControllerTest extends TestCase
 
         $app['router']->middleware(['oauth.api'])->get('api/profile', function (ClientRequest $request, Session $session) {
             return response()->json($request->user(), 200, [
-                'X_OAUTH_CLIENT_ID' => $session->get('X_OAUTH_CLIENT_ID'),
-                'X_OAUTH_USER_ID' => $session->get('X_OAUTH_USER_ID'),
+                'X_OAUTH_CLIENT_ID' => $request->get('X_OAUTH_CLIENT_ID'),
+                'X_OAUTH_USER_ID' => $request->get('X_OAUTH_USER_ID'),
             ]);
         });
 
