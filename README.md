@@ -96,3 +96,21 @@ class ToDoService extends ApiService {
 }
 
 ```
+
+# Protecting Routes
+
+To protect routes, use the middleware.
+
+```php
+Route::group(['middleware' => ['oauth']], function() {
+    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
+});
+```
+
+You can add for ``scopes`` by adding them to the middleware. Multiple scopes can be added with ``,`` as delimiter.
+
+```php
+Route::group(['middleware' => ['oauth:profile,organizations']], function() {
+    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
+});
+```
