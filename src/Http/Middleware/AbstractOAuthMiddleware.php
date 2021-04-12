@@ -9,6 +9,7 @@ use LaravelCode\Middleware\Exceptions\OAuthTokenExpired;
 use LaravelCode\Middleware\Exceptions\OAuthTokenInvalid;
 use LaravelCode\Middleware\Factories\OAuthClient as Factory;
 use LaravelCode\Middleware\Services\AccountService;
+use LaravelCode\Middleware\User;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
@@ -81,8 +82,11 @@ abstract class AbstractOAuthMiddleware
         }
 
         $user = $this->accountService->getProfile($request->bearerToken());
-        $request->setUserResolver(function () use ($user) {
-            return $user;
-        });
+        $usr = new User();
+        $data = json_decode(json_encode($user), true);
+        foreach ($data as $key => $value) {
+            $usr->setAttribute($key, $value);
+        }
+        \Auth::setUser($usr);
     }
 }
