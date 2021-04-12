@@ -83,8 +83,7 @@ abstract class AbstractOAuthMiddleware
 
         $user = $this->accountService->getProfile($request->bearerToken());
         $usr = new User();
-        $data = json_decode(json_encode($user), true);
-        foreach ($data as $key => $value) {
+        foreach (get_object_vars($user) as $key => $value) {
             $usr->setAttribute($key, $value);
         }
         \Auth::setUser($usr);
