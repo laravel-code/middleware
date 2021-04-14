@@ -4,23 +4,30 @@ namespace Test;
 
 use Firebase\JWT\JWT;
 use LaravelCode\Middleware\Factories\HttpClient;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Configuration;
+use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer\Key\LocalFileReference;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
 
 trait TestTrait
 {
     public function createClientToken($scopes = 'profile', $expires = null)
     {
-        $privateKey = file_get_contents(realpath(dirname(__FILE__).'/oauth-private.key'));
+        $config = Configuration::forAsymmetricSigner(
+            new Sha256(),
+            LocalFileReference::file(dirname(__FILE__).'/oauth-private.key'),
+            LocalFileReference::file(dirname(__FILE__).'/oauth-public.key'),
+        );
 
-        $payload = [
-            'iss' => 'accounts.org',
-            'aud' => 'accounts.com',
-            'iat' => time(),
-            'nbf' => time(),
-            'exp' => $expires ?: time() + 3600,
-            'scopes' => explode(' ', $scopes),
-        ];
-
-        return JWT::encode($payload, $privateKey, 'RS256');
+        return $config->builder()
+            ->issuedBy('accounts.com')
+            ->permittedFor('accounts.com')
+            ->issuedAt(new \DateTimeImmutable())
+            ->canOnlyBeUsedAfter(new \DateTimeImmutable())
+            ->expiresAt(new \DateTimeImmutable('+1 hour'))
+            ->withClaim('scopes', explode(' ', $scopes))
+            ->getToken($config->signer(), $config->signingKey());
     }
 
     public function assertRequests($requests = [], $assertions = [])

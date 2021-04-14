@@ -1,4 +1,5 @@
 <?php
+
 namespace LaravelCode\Middleware;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;

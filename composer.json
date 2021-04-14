@@ -11,7 +11,7 @@
     ],
     "require": {
         "laravel/passport": "^10.0",
-        "lcobucci/jwt": "^3.3",
+        "lcobucci/jwt": "^4.1",
         "laravel/framework": "^8.9"
     },
     "require-dev": {
@@ -51,6 +51,7 @@
         ],
         "test": [
             "phpunit"
-        ]
+        ],
+        "coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover clover.xml"
     }
 }

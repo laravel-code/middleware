@@ -10,9 +10,16 @@ use LaravelCode\Middleware\Exceptions\OAuthTokenInvalid;
 use LaravelCode\Middleware\Factories\OAuthClient as Factory;
 use LaravelCode\Middleware\Services\AccountService;
 use LaravelCode\Middleware\User;
+use Lcobucci\Clock\FrozenClock;
+use Lcobucci\JWT\Configuration;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Signer\Key\LocalFileReference;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
+use Lcobucci\JWT\Validation\Constraint\StrictValidAt;
+use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
+use Lcobucci\JWT\Validation\Validator;
 
 abstract class AbstractOAuthMiddleware
 {
@@ -58,24 +65,34 @@ abstract class AbstractOAuthMiddleware
      */
     protected function handleUser(Request $request, $scopes)
     {
-        $token = (new Parser())->parse($request->bearerToken());
-        $publicKey = new Key('file://'.config('oauth.public_key'));
+        $key = LocalFileReference::file(config('oauth.public_key'));
+        $configuration = Configuration::forSymmetricSigner(
+            new Sha256(),
+            $key
+        );
 
-        if ($token->verify(new Sha256(), $publicKey) === false) {
+        $token = $configuration->parser()->parse($request->bearerToken());
+
+        $configuration->setValidationConstraints(
+            new \Lcobucci\JWT\Validation\Constraint\SignedWith($configuration->signer(), $configuration->verificationKey()),
+            new StrictValidAt(new FrozenClock(new \DateTimeImmutable()))
+        );
+
+        $constraints = $configuration->validationConstraints();
+        try {
+            $configuration->validator()->assert($token, ...$constraints);
+        } catch (RequiredConstraintsViolated $e) {
+            // list of constraints violation exceptions:
             throw new OAuthTokenInvalid();
         }
 
-        if ($token->isExpired()) {
-            throw new OAuthTokenExpired();
-        }
-
-        $allScopes = collect($token->getClaim('scopes'))->filter(function ($scope) {
+        $allScopes = collect($token->claims()->get('scopes', []))->filter(function ($scope) {
             return $scope === '*';
         })->isNotEmpty();
 
         if ($allScopes === false) {
             collect($scopes)->each(function ($scope) use ($token) {
-                if (! in_array($scope, $token->getClaim('scopes'))) {
+                if (! in_array($scope, $token->claims()->get('scopes', []))) {
                     throw new OAuthScopeInvalid('Missing scope: '.$scope);
                 }
             });

@@ -27,7 +27,7 @@ jobs:
       run: vendor/bin/php-cs-fixer fix ./src/ --dry-run
 
     - name: Run test suite
-      run: vendor/bin/phpunit
+      run: composer coverage
 
     - name: Run coverage threshold >= 60%
       run: php coverage-checker.php ./clover.xml 60
