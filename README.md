@@ -74,15 +74,18 @@ Check if the user Bearer token is valid.
 This will any token, personal of client token.
 When it is a personal token, the Auth user will get set on the Request
 
+## OAuthOrGuest
+Middleware that allows for not loggedIn users to access the route. 
+When a Bearer token is present it will be checked and validated. The user will be set. 
+
 # Service
 
 ```LaravelCode\Middleware\Services\ApiService```
 
-You can extend on this abstract class to communicate with other miscroservices
+You can extend on this abstract class to communicate with other microservices
 connected to the same account server.
 
-```
-<?php
+```php
 Namespace App\Services;
 
 use LaravelCode\Middleware\Services\ApiService;
@@ -95,6 +98,14 @@ class ToDoService extends ApiService {
     }
 }
 
+```
+
+Register your new service in the boot method of a provider
+
+```php
+app()->bind(ToDoService::class, function () {
+    return new ToDoService(app()->get(OAuthClient::class));
+});
 ```
 
 # Protecting Routes

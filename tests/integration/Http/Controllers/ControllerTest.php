@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request as ClientRequest;
+use Illuminate\Support\Facades\Auth;
 use LaravelCode\Middleware\Facades\HttpClient;
 use LaravelCode\Middleware\Facades\OAuthClient;
 use Mockery;
@@ -130,6 +131,78 @@ class ControllerTest extends TestCase
         ]);
     }
 
+    /** Test route  */
+    public function testOauthOrGuestStepGuest()
+    {
+        $requests = [];
+        $history = Middleware::history($requests);
+
+        $stack = HandlerStack::create(
+            new MockHandler([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                    'access_token' => $this->createClientToken(),
+                    'expires_in' => time() + 3600,
+                    'token_type' => 'jwt',
+                ])),
+            ])
+        );
+        $stack->push($history);
+        $this->mockHttpClient($stack);
+
+        $response = $this->getJson('api/oauth/guest');
+        $this->assertNull($response->json('id'));
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $this->assertRequests($requests, [
+            function (Request $request) {
+                parse_str($request->getBody()->getContents(), $body);
+                $this->assertEquals('client_credentials', $body['grant_type']);
+                $this->assertEquals('3', $body['client_id']);
+                $this->assertEquals('b89260e9-4fa3-4e87-b2ab-58d746be491a', $body['client_secret']);
+                $this->assertSame('profile', $body['scope']);
+            },
+        ]);
+    }
+
+    public function testOauthOrGuestStepOAuth()
+    {
+        $requests = [];
+        $history = Middleware::history($requests);
+
+        $stack = HandlerStack::create(
+            new MockHandler([
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                    'access_token' => $this->createClientToken(),
+                    'expires_in' => time() + 3600,
+                    'token_type' => 'jwt',
+                ])),
+                new Response(200, ['Content-Type' => 'application/json'], json_encode([
+                    'id' => 1,
+                ])),
+            ])
+        );
+        $stack->push($history);
+        $this->mockHttpClient($stack);
+
+        $response = $this->getJson('api/oauth/guest', ['Authorization' => 'Bearer '.$this->createUserToken()]);
+        $this->assertEquals(1, $response->json('id'));
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $this->assertRequests($requests, [
+            function (Request $request) {
+                parse_str($request->getBody()->getContents(), $body);
+                $this->assertEquals('client_credentials', $body['grant_type']);
+                $this->assertEquals('3', $body['client_id']);
+                $this->assertEquals('b89260e9-4fa3-4e87-b2ab-58d746be491a', $body['client_secret']);
+                $this->assertSame('profile', $body['scope']);
+            },
+            function (Request $request) {
+                $this->assertEquals('/api/profile', $request->getUri()->getPath());
+                $this->assertNotEmpty($request->getHeaderLine('Authorization'));
+            },
+        ]);
+    }
+
     public function testUserToken()
     {
         $requests = [];
@@ -227,6 +300,10 @@ class ControllerTest extends TestCase
 
         $app['router']->middleware(['oauth'])->get('api/oauth', function () {
             return response()->json(['ok' => true]);
+        });
+
+        $app['router']->middleware(['oauth.guest'])->get('api/oauth/guest', function () {
+            return response()->json(Auth::getUser());
         });
 
         $app['router']->middleware(['oauth.api'])->get('api/profile', function (ClientRequest $request, Session $session) {

@@ -2,9 +2,9 @@
 
 namespace LaravelCode\Middleware\Services;
 
-class AccountService extends ApiService
+class AccountService extends ApiService implements AccountsServiceInterface
 {
-    public function getProfile($token)
+    public function getProfile(string $token)
     {
         $headers = [
             'Authorization' => 'Bearer '.$token,

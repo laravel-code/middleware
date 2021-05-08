@@ -32,7 +32,7 @@ trait TestTrait
 
     public function assertRequests($requests = [], $assertions = [])
     {
-        $this->assertEquals(count($requests), count($assertions), 'All requests should have an assertion.');
+        $this->assertEquals(count($assertions), count($requests), sprintf('All requests should have an assertion. %s called, %s expected', count($requests), count($assertions)));
 
         foreach ($requests as $request) {
             $callback = array_shift($assertions);

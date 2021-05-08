@@ -3,35 +3,34 @@
 namespace LaravelCode\Middleware\Http\Middleware;
 
 use Closure;
+use DateTimeImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use LaravelCode\Middleware\Exceptions\OauthClientContentTypeException;
 use LaravelCode\Middleware\Exceptions\OAuthScopeInvalid;
-use LaravelCode\Middleware\Exceptions\OAuthTokenExpired;
 use LaravelCode\Middleware\Exceptions\OAuthTokenInvalid;
 use LaravelCode\Middleware\Factories\OAuthClient as Factory;
 use LaravelCode\Middleware\Services\AccountService;
 use LaravelCode\Middleware\User;
 use Lcobucci\Clock\FrozenClock;
 use Lcobucci\JWT\Configuration;
-use Lcobucci\JWT\Parser;
-use Lcobucci\JWT\Signer\Key;
-use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Signer\Key\LocalFileReference;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
+use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\Constraint\StrictValidAt;
 use Lcobucci\JWT\Validation\RequiredConstraintsViolated;
-use Lcobucci\JWT\Validation\Validator;
 
 abstract class AbstractOAuthMiddleware
 {
     /**
      * @var Factory
      */
-    private $client;
+    private Factory $client;
 
     /**
      * @var AccountService
      */
-    private $accountService;
+    private AccountService $accountService;
 
     /**
      * AbstractOAuthMiddleware constructor.
@@ -52,6 +51,10 @@ abstract class AbstractOAuthMiddleware
      */
     abstract public function handle(Request $request, Closure $next, ...$scopes);
 
+    /**
+     * @throws OauthClientContentTypeException
+     * @throws AuthorizationException
+     */
     protected function handleClient()
     {
         $this->client->setup();
@@ -60,8 +63,7 @@ abstract class AbstractOAuthMiddleware
     /**
      * @param Request $request
      * @param $scopes
-     * @throws OAuthTokenExpired
-     * @throws OAuthTokenInvalid
+     * @throws OAuthTokenInvalid|OAuthScopeInvalid
      */
     protected function handleUser(Request $request, $scopes)
     {
@@ -74,8 +76,8 @@ abstract class AbstractOAuthMiddleware
         $token = $configuration->parser()->parse($request->bearerToken());
 
         $configuration->setValidationConstraints(
-            new \Lcobucci\JWT\Validation\Constraint\SignedWith($configuration->signer(), $configuration->verificationKey()),
-            new StrictValidAt(new FrozenClock(new \DateTimeImmutable()))
+            new SignedWith($configuration->signer(), $configuration->verificationKey()),
+            new StrictValidAt(new FrozenClock(new DateTimeImmutable()))
         );
 
         $constraints = $configuration->validationConstraints();

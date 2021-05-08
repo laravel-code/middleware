@@ -25,7 +25,7 @@ class CheckApiCredentials extends CheckClientCredentials
         if (! $token) {
             throw new AuthenticationException;
         }
-
+        $this->validateCredentials($token);
         $this->validateScopes($token, $scopes);
         $clientId = $psr->getAttribute('oauth_client_id', null);
         $userId = $psr->getAttribute('oauth_user_id', null);

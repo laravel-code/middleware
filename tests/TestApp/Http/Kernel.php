@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use LaravelCode\Middleware\Http\Middleware\CheckApiCredentials;
 use LaravelCode\Middleware\Http\Middleware\OAuth;
 use LaravelCode\Middleware\Http\Middleware\OAuthClient;
+use LaravelCode\Middleware\Http\Middleware\OAuthOrGuest;
 use LaravelCode\Middleware\Http\Middleware\OAuthUser;
 
 class Kernel extends HttpKernel
@@ -31,6 +32,7 @@ class Kernel extends HttpKernel
         'oauth.client' => OAuthClient::class,
         'oauth.user' => OAuthUser::class,
         'oauth' => OAuth::class,
+        'oauth.guest' => OAuthOrGuest::class,
         'oauth.api' => CheckApiCredentials::class,
     ];
 }
