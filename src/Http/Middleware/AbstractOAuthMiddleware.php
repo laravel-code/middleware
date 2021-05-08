@@ -100,7 +100,11 @@ abstract class AbstractOAuthMiddleware
             });
         }
 
-        $user = $this->accountService->getProfile($request->bearerToken());
+        $jti = $token->claims()->get('jti');
+        $user = \Cache::store('array')->remember($jti, 60, function () use ($request) {
+            return $this->accountService->getProfile($request->bearerToken());
+        });
+
         $usr = new User();
         foreach (get_object_vars($user) as $key => $value) {
             $usr->setAttribute($key, $value);

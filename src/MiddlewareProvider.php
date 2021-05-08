@@ -2,6 +2,7 @@
 
 namespace LaravelCode\Middleware;
 
+use Cache;
 use Illuminate\Cache\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;

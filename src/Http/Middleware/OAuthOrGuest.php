@@ -20,7 +20,7 @@ class OAuthOrGuest extends AbstractOAuthMiddleware
     {
         $this->handleClient();
 
-        if ($request->bearerToken()) {
+        if ($request->bearerToken() || ! empty($scopes)) {
             $this->handleUser($request, $scopes);
         }
 
