@@ -26,12 +26,11 @@ class ControllerTest extends TestCase
     {
         $requests = [];
         $history = Middleware::history($requests);
-
         $stack = HandlerStack::create(
             new MockHandler([
                 new Response(200, ['Content-Type' => 'application/json'], json_encode([
                     'access_token' => $this->createClientToken(),
-                    'expires_in' => time() + 3600,
+                    'expires_in' => 3600,
                     'token_type' => 'jwt',
                 ])),
             ])

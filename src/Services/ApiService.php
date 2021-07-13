@@ -2,6 +2,7 @@
 
 namespace LaravelCode\Middleware\Services;
 
+use Exception;
 use LaravelCode\Middleware\Factories\OAuthClient;
 
 abstract class ApiService
@@ -9,7 +10,7 @@ abstract class ApiService
     /**
      * @var OAuthClient
      */
-    protected $service;
+    protected OAuthClient $service;
 
     /**
      * ApiService constructor.
@@ -24,9 +25,9 @@ abstract class ApiService
      * @param $resource
      * @param array $query
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    public function index($resource, $query = [])
+    public function index($resource, array $query = [])
     {
         $params = [
             'query' => $query,
@@ -45,9 +46,9 @@ abstract class ApiService
      * @param $id
      * @param array $query
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    public function show($resource, $id, $query = [])
+    public function show($resource, $id, array $query = [])
     {
         $params = [
             'query' => $query,
@@ -60,7 +61,7 @@ abstract class ApiService
      * @param $resource
      * @param $id
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function delete($resource, $id)
     {
@@ -72,9 +73,9 @@ abstract class ApiService
      * @param $id
      * @param array $formParams
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    public function update($resource, $id, $formParams = [])
+    public function update($resource, $id, array $formParams = [])
     {
         $params = [
             'form_params' => $formParams,
@@ -87,9 +88,9 @@ abstract class ApiService
      * @param $resource
      * @param array $formParams
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    public function store($resource, $formParams = [])
+    public function store($resource, array $formParams = [])
     {
         $params = [
             'form_params' => $formParams,
@@ -105,9 +106,9 @@ abstract class ApiService
      * @param array $formParams
      * @param array $headers
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
-    public function request($method, $path, $query = [], $formParams = [], $headers = [])
+    public function request($method, $path, array $query = [], array $formParams = [], array $headers = [])
     {
         $params = [
             'query' => $query,

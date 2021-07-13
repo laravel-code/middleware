@@ -51,8 +51,10 @@ class OAuthClient
 
     /**
      * @return string
+     * @throws AuthorizationException
+     * @throws OauthClientContentTypeException|\GuzzleHttp\Exception\GuzzleException
      */
-    public function setUp()
+    public function setUp(): string
     {
         // Token is about to expire we will request a new token.
         if ($this->cache->has('apiClient') && $this->access_token && $this->expires_in <= time() + 60) {
@@ -71,6 +73,7 @@ class OAuthClient
             if (! stristr($response->getHeaderLine('Content-Type'), 'application/json')) {
                 throw new OauthClientContentTypeException('JSON accepted but received '.$response->getHeaderLine('Content-Type'), 500);
             }
+
             $data = json_decode((string) $response->getBody());
 
             if (! $data || ! $data->access_token) {
@@ -118,7 +121,7 @@ class OAuthClient
     /**
      * @return string
      */
-    public function getAccessToken()
+    public function getAccessToken(): string
     {
         return $this->access_token;
     }
@@ -134,7 +137,7 @@ class OAuthClient
     /**
      * @return string
      */
-    public function getTokenType()
+    public function getTokenType(): string
     {
         return $this->token_type;
     }

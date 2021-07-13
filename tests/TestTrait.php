@@ -27,7 +27,8 @@ trait TestTrait
             ->canOnlyBeUsedAfter(new \DateTimeImmutable())
             ->expiresAt(new \DateTimeImmutable('+1 hour'))
             ->withClaim('scopes', explode(' ', $scopes))
-            ->getToken($config->signer(), $config->signingKey());
+            ->getToken($config->signer(), $config->signingKey())
+            ->toString();
     }
 
     public function assertRequests($requests = [], $assertions = [])
