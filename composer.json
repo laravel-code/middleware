@@ -10,13 +10,12 @@
         }
     ],
     "require": {
-        "laravel/passport": "^10.0",
-        "lcobucci/jwt": "^4.1",
-        "laravel/framework": "^8.40",
-        "guzzlehttp/guzzle": "^7.3",
-        "psalm/phar": "^4.7"
+        "lcobucci/jwt": "^4.1"
     },
     "require-dev": {
+        "laravel/passport": "^10.0",
+        "laravel/framework": "^8.40",
+        "guzzlehttp/guzzle": "^7.3",
         "friendsofphp/php-cs-fixer": "^3.0",
         "orchestra/testbench": "^6.23",
         "mockery/mockery": "^1.3",
