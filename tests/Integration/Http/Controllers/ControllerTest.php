@@ -1,10 +1,9 @@
 <?php
 
-namespace Test\Http\Controllers;
+namespace Test\Integration\Http\Controllers;
 
 use Illuminate\Http\Client\Request;
 use LaravelCode\Middleware\Facades\ClientToken;
-use LaravelCode\Middleware\Facades\HttpClient;
 use LaravelCode\Middleware\Facades\OAuthClient;
 use Mockery;
 use Orchestra\Testbench\TestCase;

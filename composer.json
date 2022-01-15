@@ -44,7 +44,7 @@
     "autoload-dev": {
         "psr-4": {
             "TestApp\\": "tests/TestApp",
-            "Test\\": "tests/integration"
+            "Test\\": "tests"
         }
     },
     "scripts": {
