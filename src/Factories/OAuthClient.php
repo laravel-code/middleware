@@ -43,6 +43,8 @@ class OAuthClient
      */
     public function client(string $method, string $domain, string $path, array $params = []): mixed
     {
+        assert(in_array($method, ['get', 'post', 'put', 'delete']), sprintf('Unknown request method %s', $method));
+
         $params = array_replace_recursive([
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->clientToken->getToken(),
@@ -55,7 +57,7 @@ class OAuthClient
         /** @var Response $response */
         $response = call_user_func([Http::class, $method], $domain . $path, $params);
         if (in_array('application/json', $response->getHeader('Content-Type'))) {
-            return json_decode((string) $response->getBody());
+            return json_decode((string)$response->getBody());
         }
 
         return $response->getBody()->getContents();

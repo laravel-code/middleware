@@ -49,34 +49,56 @@ Copy the ```oauth-public.key``` from your accounts server into ```/storage/oauth
 
 Register the needed middleware in ```App\Http\kernel.php``` within the ```protected $routeMiddleware``` property
 
-## Frontfacing api's
 
-```LaravelCode\Middleware\Http\Middleware\OAuth```
-
-This will check if the client is authorized and if the user is authorized.
-It will set the Auth::user() on the Request object.
-
-## System to Systems
-
-```LaravelCode\Middleware\Http\Middleware\OAuthClient```
-
-## Check Bearer token
-
-```LaravelCode\Middleware\Http\Middleware\OAuthClient```
-
-Check if the user Bearer token is valid.
+```php
+...
+        'oauth' => \laravelCode\Middleware\Http\OAuthMiddleWare::class,
+        'scope' => \laravelCode\Middleware\Http\ScopeMiddleware::class,
+        'role' => \laravelCode\Middleware\Http\RoleMiddleware::class,
+...
+```
 
 
-## AccountsServer
+## OAuth
+```\LaravelCode\Middleware\Http\OAuthMiddleware```
 
-```LaravelCode\Middleware\Http\Middleware\CheckApiCredentials```
+This will check if the provided bearer token is valid and will request the user profile from the accounts server
 
-This will any token, personal of client token.
-When it is a personal token, the Auth user will get set on the Request
+```php
+Route::group(['middleware' => ['oauth']], function() {
+    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
+});
+```
 
-## OAuthOrGuest
-Middleware that allows for not loggedIn users to access the route. 
-When a Bearer token is present it will be checked and validated. The user will be set. 
+## Scopes
+```\LaravelCode\Middleware\Http\ScopMiddleware```
+
+This will check if the provided bearer token has the required role
+
+```php
+Route::group(['middleware' => ['scope:admin']], function() {
+    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
+});
+```
+
+## Roles
+```\LaravelCode\Middleware\Http\RoleMiddleware```
+
+This will check if the fetched uses has the correct access for the resource
+
+```php
+Route::group(['middleware' => ['role:admin']], function() {
+    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
+});
+```
+
+## Combining middleware
+
+```php
+Route::group(['middleware' => ['oauth', 'scope:admin', 'role:admin']], function() {
+    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
+});
+```
 
 # Service
 
@@ -105,23 +127,5 @@ Register your new service in the boot method of a provider
 ```php
 app()->bind(ToDoService::class, function () {
     return new ToDoService(app()->get(OAuthClient::class));
-});
-```
-
-# Protecting Routes
-
-To protect routes, use the middleware.
-
-```php
-Route::group(['middleware' => ['oauth']], function() {
-    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
-});
-```
-
-You can add for ``scopes`` by adding them to the middleware. Multiple scopes can be added with ``,`` as delimiter.
-
-```php
-Route::group(['middleware' => ['oauth:profile,organizations']], function() {
-    Route::get('/projects', [\App\Http\Controllers\Api\ProjectsController::class, 'index']);
 });
 ```
