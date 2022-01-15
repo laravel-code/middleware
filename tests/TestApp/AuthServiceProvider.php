@@ -4,8 +4,6 @@ namespace TestApp;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Laravel\Passport\Passport;
-use TestApp\Models\Blog;
-use TestApp\Models\Policies\BlogPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {

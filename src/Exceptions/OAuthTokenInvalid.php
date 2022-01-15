@@ -2,6 +2,6 @@
 
 namespace LaravelCode\Middleware\Exceptions;
 
-class OAuthTokenInvalid extends \Exception
+class OAuthTokenInvalid extends BaseException
 {
 }

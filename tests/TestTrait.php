@@ -4,9 +4,7 @@ namespace Test;
 
 use Firebase\JWT\JWT;
 use LaravelCode\Middleware\Factories\HttpClient;
-use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Configuration;
-use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Key\LocalFileReference;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 
@@ -16,8 +14,8 @@ trait TestTrait
     {
         $config = Configuration::forAsymmetricSigner(
             new Sha256(),
-            LocalFileReference::file(dirname(__FILE__).'/oauth-private.key'),
-            LocalFileReference::file(dirname(__FILE__).'/oauth-public.key'),
+            LocalFileReference::file(dirname(__FILE__) . '/oauth-private.key'),
+            LocalFileReference::file(dirname(__FILE__) . '/oauth-public.key'),
         );
 
         return $config->builder()
@@ -43,7 +41,7 @@ trait TestTrait
 
     public function createUserToken($scopes = 'profile', $expires = null)
     {
-        $privateKey = file_get_contents(realpath(dirname(__FILE__).'/oauth-private.key'));
+        $privateKey = file_get_contents(realpath(dirname(__FILE__) . '/oauth-private.key'));
 
         $payload = [
             'aud' => 2, // GRANT ID
@@ -68,6 +66,6 @@ trait TestTrait
     public function setStoragePath($app)
     {
         $app->useStoragePath(dirname(__FILE__));
-        $app['config']->set('logging.channels.single.path', storage_path('logs').'/laravel.log');
+        $app['config']->set('logging.channels.single.path', storage_path('logs') . '/laravel.log');
     }
 }

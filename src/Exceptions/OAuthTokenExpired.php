@@ -2,6 +2,6 @@
 
 namespace LaravelCode\Middleware\Exceptions;
 
-class OAuthTokenExpired extends \Exception
+class OAuthTokenExpired extends BaseException
 {
 }

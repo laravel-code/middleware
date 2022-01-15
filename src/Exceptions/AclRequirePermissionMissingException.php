@@ -2,6 +2,7 @@
 
 namespace LaravelCode\Middleware\Exceptions;
 
-class AclRequirePermissionMissingException extends \Exception
+class AclRequirePermissionMissingException extends BaseException
 {
+    protected $code = 403;
 }

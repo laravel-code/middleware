@@ -17,11 +17,13 @@
         "psalm/phar": "^4.7"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.16",
-        "orchestra/testbench": "^6.2",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "orchestra/testbench": "^6.23",
         "mockery/mockery": "^1.3",
         "facade/ignition": "^2.0.1",
-        "phpunit/phpunit": "^9.5"
+        "phpunit/phpunit": "^9.5",
+        "nunomaduro/larastan": "^1.0",
+        "phpstan/phpstan": "^1.4"
     },
     "extra": {
         "laravel": {
@@ -41,8 +43,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "TestApp\\": "tests\\TestApp",
-            "Test\\": "tests"
+            "TestApp\\": "tests/TestApp",
+            "Test\\": "tests/integration"
         }
     },
     "scripts": {
@@ -52,6 +54,9 @@
         "test": [
             "phpunit"
         ],
-        "coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover clover.xml"
+        "coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover clover.xml",
+        "phpstan": [
+            "phpstan --memory-limit=2G"
+        ]
     }
 }

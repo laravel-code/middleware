@@ -8,6 +8,6 @@ class OAuthClient extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'OAuthClient';
+        return \LaravelCode\Middleware\Factories\OAuthClient::class;
     }
 }

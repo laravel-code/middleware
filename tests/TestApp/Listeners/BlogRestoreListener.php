@@ -3,7 +3,6 @@
 namespace TestApp\Listeners;
 
 use LaravelCode\Middleware\Listeners\CrudListener;
-use TestApp\Events\BlogDestroyEvent;
 use TestApp\Events\BlogRestoreEvent;
 
 class BlogRestoreListener extends CrudListener

@@ -1,15 +1,9 @@
 <?php
 
-namespace Test\integration\Http\Controllers;
+namespace Test\Http\Controllers;
 
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Contracts\Session\Session;
-use Illuminate\Http\Request as ClientRequest;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Client\Request;
+use LaravelCode\Middleware\Facades\ClientToken;
 use LaravelCode\Middleware\Facades\HttpClient;
 use LaravelCode\Middleware\Facades\OAuthClient;
 use Mockery;
@@ -22,223 +16,323 @@ class ControllerTest extends TestCase
 {
     use TestTrait;
 
-    public function testClientToken()
+    public function testOauthMiddleware()
     {
-        $requests = [];
-        $history = Middleware::history($requests);
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'access_token' => $this->createClientToken(),
-                    'expires_in' => 3600,
-                    'token_type' => 'jwt',
-                ])),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
 
-        $response = $this->getJson('api/client');
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+            ], 200, ['Headers']),
+        ]);
+
+        $response = $this->getJson('api/client', ['Authorization' => 'Bearer ' . $this->createUserToken()]);
         $response->assertJson(['ok' => true]);
         $response->assertOk();
 
-        $this->assertRequests($requests, [
-            function (Request $request) {
-                parse_str($request->getBody()->getContents(), $body);
-                $this->assertEquals('client_credentials', $body['grant_type']);
-                $this->assertEquals('3', $body['client_id']);
-                $this->assertEquals('b89260e9-4fa3-4e87-b2ab-58d746be491a', $body['client_secret']);
-                $this->assertSame('profile', $body['scope']);
-            },
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
+    }
+
+    public function testScopeMiddlewareSuccess()
+    {
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
+
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+            ], 200, ['Headers']),
         ]);
+
+        $response = $this->getJson('api/scope', ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+        $response->assertJson(['ok' => true]);
+        $response->assertOk();
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
     }
 
-    public function testClientTokenContentTypeException()
+    public function testScopeMiddlewareFailed()
     {
-        $requests = [];
-        $history = Middleware::history($requests);
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
 
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'text/html'], 'bogus data'),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
-
-        $response = $this->getJson('api/client');
-        $this->assertEquals('JSON accepted but received text/html', $response->exception->getMessage());
-        $this->assertEquals(500, $response->exception->getCode());
-    }
-
-    public function testClientDenied()
-    {
-        $this->createClientToken();
-
-        $requests = [];
-        $history = Middleware::history($requests);
-
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'application/json'], json_encode(null)),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
-
-        $response = $this->getJson('api/client');
-        $this->assertEquals('Api client could not get authorized', $response->exception->getMessage());
-        $this->assertEquals(401, $response->exception->getCode());
-    }
-
-    public function testOauthToken()
-    {
-        $requests = [];
-        $history = Middleware::history($requests);
-
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'access_token' => $this->createClientToken(),
-                    'expires_in' => time() + 3600,
-                    'token_type' => 'jwt',
-                ])),
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'id' => 1,
-                ])),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
-
-        $response = $this->getJson('api/oauth', ['Authorization' => 'Bearer '.$this->createUserToken()]);
-        $this->assertTrue($response->json('ok'));
-        $this->assertEquals(200, $response->getStatusCode());
-
-        $this->assertRequests($requests, [
-            function (Request $request) {
-                parse_str($request->getBody()->getContents(), $body);
-                $this->assertEquals('client_credentials', $body['grant_type']);
-                $this->assertEquals('3', $body['client_id']);
-                $this->assertEquals('b89260e9-4fa3-4e87-b2ab-58d746be491a', $body['client_secret']);
-                $this->assertSame('profile', $body['scope']);
-            },
-            function (Request $request) {
-                $this->assertEquals('/api/profile', $request->getUri()->getPath());
-                $this->assertNotEmpty($request->getHeaderLine('Authorization'));
-            },
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+            ], 200, ['Headers']),
         ]);
+
+        $response = $this->getJson('api/scope', ['Authorization' => 'Bearer ' . $this->createUserToken('wrong-scope')]);
+
+        $response->assertStatus(403);
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
     }
 
-    /** Test route  */
-    public function testOauthOrGuestStepGuest()
+    public function testGetRoleMiddlewareSuccess()
     {
-        $requests = [];
-        $history = Middleware::history($requests);
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
 
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'access_token' => $this->createClientToken(),
-                    'expires_in' => time() + 3600,
-                    'token_type' => 'jwt',
-                ])),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
-
-        $response = $this->getJson('api/oauth/guest');
-        $this->assertNull($response->json('id'));
-        $this->assertEquals(200, $response->getStatusCode());
-
-        $this->assertRequests($requests, [
-            function (Request $request) {
-                parse_str($request->getBody()->getContents(), $body);
-                $this->assertEquals('client_credentials', $body['grant_type']);
-                $this->assertEquals('3', $body['client_id']);
-                $this->assertEquals('b89260e9-4fa3-4e87-b2ab-58d746be491a', $body['client_secret']);
-                $this->assertSame('profile', $body['scope']);
-            },
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+                'roles' => [
+                    [
+                        'name' => 'admin',
+                        'pivot' => [
+                            'req_post' => true,
+                            'req_put' => true,
+                            'req_delete' => true,
+                            'req_get' => true,
+                        ],
+                    ],
+                ],
+            ], 200, ['Headers']),
         ]);
+
+        $response = $this->getJson('api/admin', ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertJson(['ok' => true]);
+        $response->assertOk();
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
     }
 
-    public function testOauthOrGuestStepOAuth()
+    public function testPostRoleMiddlewareSuccess()
     {
-        $requests = [];
-        $history = Middleware::history($requests);
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
 
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'access_token' => $this->createClientToken(),
-                    'expires_in' => time() + 3600,
-                    'token_type' => 'jwt',
-                ])),
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'id' => 1,
-                ])),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
-
-        $response = $this->getJson('api/oauth/guest', ['Authorization' => 'Bearer '.$this->createUserToken()]);
-        $this->assertEquals(1, $response->json('id'));
-        $this->assertEquals(200, $response->getStatusCode());
-
-        $this->assertRequests($requests, [
-            function (Request $request) {
-                parse_str($request->getBody()->getContents(), $body);
-                $this->assertEquals('client_credentials', $body['grant_type']);
-                $this->assertEquals('3', $body['client_id']);
-                $this->assertEquals('b89260e9-4fa3-4e87-b2ab-58d746be491a', $body['client_secret']);
-                $this->assertSame('profile', $body['scope']);
-            },
-            function (Request $request) {
-                $this->assertEquals('/api/profile', $request->getUri()->getPath());
-                $this->assertNotEmpty($request->getHeaderLine('Authorization'));
-            },
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+                'roles' => [
+                    [
+                        'name' => 'admin',
+                        'pivot' => [
+                            'req_post' => true,
+                            'req_put' => true,
+                            'req_delete' => true,
+                            'req_get' => true,
+                        ],
+                    ],
+                ],
+            ], 200, ['Headers']),
         ]);
+
+        $response = $this->postJson('api/admin', [], ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertJson(['ok' => true]);
+        $response->assertOk();
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
     }
 
-    public function testUserToken()
+    public function testDeleteRoleMiddlewareSuccess()
     {
-        $requests = [];
-        $history = Middleware::history($requests);
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
 
-        $stack = HandlerStack::create(
-            new MockHandler([
-                new Response(200, ['Content-Type' => 'application/json'], json_encode([
-                    'id' => 1,
-                ])),
-            ])
-        );
-        $stack->push($history);
-        $this->mockHttpClient($stack);
-
-        $response = $this->getJson('api/user', ['Authorization' => 'Bearer '.$this->createUserToken()]);
-        $this->assertTrue($response->json('ok'));
-        $this->assertEquals(200, $response->getStatusCode());
-
-        $this->assertRequests($requests, [
-            function (Request $request) {
-                $this->assertEquals('/api/profile', $request->getUri()->getPath());
-                $this->assertNotEmpty($request->getHeaderLine('Authorization'));
-            },
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+                'roles' => [
+                    [
+                        'name' => 'admin',
+                        'pivot' => [
+                            'req_post' => true,
+                            'req_put' => true,
+                            'req_delete' => true,
+                            'req_get' => true,
+                        ],
+                    ],
+                ],
+            ], 200, ['Headers']),
         ]);
+
+        $response = $this->delete('api/admin', [], ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertJson(['ok' => true]);
+        $response->assertOk();
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
     }
 
-    public function testPassportApiCredentials()
+    public function testPutRoleMiddlewareSuccess()
     {
-        $token = $this->createUserToken();
-        $response = $this->getJson('api/profile', [
-            'Accept' => 'application/json',
-            'Authorization' => 'Bearer '.$token,
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
+
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+                'roles' => [
+                    [
+                        'name' => 'admin',
+                        'pivot' => [
+                            'req_post' => true,
+                            'req_put' => true,
+                            'req_delete' => true,
+                            'req_get' => true,
+                        ],
+                    ],
+                ],
+            ], 200, ['Headers']),
         ]);
-        $response->assertHeader('X_OAUTH_USER_ID', 1);
-        $response->assertHeader('X_OAUTH_CLIENT_ID', 2);
-        $response->assertJson(['id' => 1]);
+
+        $response = $this->put('api/admin', [], ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertJson(['ok' => true]);
+        $response->assertOk();
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
+    }
+
+    public function testPutRoleMiddlewareNoAccess()
+    {
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
+
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+                'roles' => [
+                    [
+                        'name' => 'admin',
+                        'pivot' => [
+                            'req_post' => false,
+                            'req_put' => false,
+                            'req_delete' => false,
+                            'req_get' => false,
+                        ],
+                    ],
+                ],
+            ], 200, ['Headers']),
+        ]);
+
+        $response = $this->put('api/admin', [], ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertStatus(403);
+        $response->assertJson(['message' => 'User does not have required permission(put) on role(admin)']);
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
+    }
+
+    public function testPutRoleMiddlewareNoRoles()
+    {
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
+
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'name' => 'John Doe',
+            ], 200, ['Headers']),
+        ]);
+
+        $response = $this->put('api/admin', [], ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertStatus(403);
+        $response->assertJson(['message' => 'User does not have required role(admin)']);
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
+    }
+
+    public function testPutRoleMiddlewareNoProfile()
+    {
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
+
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([], 200, ['Headers']),
+        ]);
+
+        $response = $this->put('api/admin', [], ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertStatus(403);
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
     }
 
     public function tearDown(): void
@@ -265,7 +359,7 @@ class ControllerTest extends TestCase
 
         $this->loadMigrationsFrom([
             '--database' => 'testing',
-            '--path' => realpath(__DIR__.'/../../../fixtures'),
+            '--path' => realpath(__DIR__ . '/../../../fixtures'),
         ]);
     }
 
@@ -281,38 +375,44 @@ class ControllerTest extends TestCase
         $app['config']->set('auth.guards.api.driver', 'passport');
         $app['config']->set('auth.providers.users.model', User::class);
         $app['config']->set('oauth', [
-            'host' => 'https://dummy.dummy',
-            'token' => '/api/token',
+            'host' => 'https://accounts.dummy',
+            'path' => '/api/token',
             'client_id' => 3,
             'client_secret' => 'b89260e9-4fa3-4e87-b2ab-58d746be491a',
             'scopes' => 'profile',
-            'public_key' => realpath(__DIR__.'/../../../oauth-public.key'),
+            'public_key' => realpath(__DIR__ . '/../../../oauth-public.key'),
         ]);
 
-        $app['router']->middleware(['oauth.client'])->get('api/client', function () {
+        $app['router']->middleware(['oauth'])->get('api/client', function () {
             return response()->json(['ok' => true]);
         });
 
-        $app['router']->middleware(['oauth.user'])->get('api/user', function () {
+        $app['router']->middleware(['oauth', 'oauth.scope:profile'])->get('api/scope', function () {
             return response()->json(['ok' => true]);
         });
 
-        $app['router']->middleware(['oauth'])->get('api/oauth', function () {
-            return response()->json(['ok' => true]);
+        $app['router']->middleware(['oauth', 'oauth.role:admin'])->group(function () use ($app) {
+            $app['router']->get('api/admin', function () {
+                return response()->json(['ok' => true]);
+            });
+
+            $app['router']->post('api/admin', function () {
+                return response()->json(['ok' => true]);
+            });
+
+            $app['router']->put('api/admin', function () {
+                return response()->json(['ok' => true]);
+            });
+
+            $app['router']->delete('api/admin', function () {
+                return response()->json(['ok' => true]);
+            });
         });
 
-        $app['router']->middleware(['oauth.guest'])->get('api/oauth/guest', function () {
-            return response()->json(Auth::getUser());
-        });
-
-        $app['router']->middleware(['oauth.api'])->get('api/profile', function (ClientRequest $request, Session $session) {
-            return response()->json($request->user(), 200, [
-                'X_OAUTH_CLIENT_ID' => $request->get('X_OAUTH_CLIENT_ID'),
-                'X_OAUTH_USER_ID' => $request->get('X_OAUTH_USER_ID'),
-            ]);
-        });
-
-        $app['router']->middleware(['oauth.api:admin'])->get('api/admin', function () {
+        $app['router']->middleware(['oauth.role:admin'])->group(function () use ($app) {
+            $app['router']->get('api/no-user', function () {
+                return response()->json(['ok' => true]);
+            });
         });
 
         $app['config']->set('app.debug', true);
@@ -353,6 +453,7 @@ class ControllerTest extends TestCase
         return [
             'OAuthClient' => OAuthClient::class,
             'HttpClient' => HttpClient::class,
+            'ClientToken' => ClientToken::class,
         ];
     }
 }
