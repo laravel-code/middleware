@@ -4,9 +4,11 @@ namespace LaravelCode\Middleware\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use LaravelCode\Middleware\Contracts\RoleCheckProviderContract;
 use LaravelCode\Middleware\Exceptions\AclRequirePermissionMissingException;
 use LaravelCode\Middleware\Exceptions\AclRequireRoleMissingException;
 use LaravelCode\Middleware\Exceptions\OAuthProfileException;
+use LaravelCode\Middleware\Providers\DefaultRoleCheck;
 
 /**
  * Check if user has permission to access the protected route.
@@ -38,6 +40,18 @@ use LaravelCode\Middleware\Exceptions\OAuthProfileException;
  */
 class RoleMiddleware extends AbstractMiddleWare
 {
+    protected static RoleCheckProviderContract $provider;
+
+    public static function setProvider(RoleCheckProviderContract $provider): void
+    {
+        static::$provider = $provider;
+    }
+
+    public function getProvider(): RoleCheckProviderContract
+    {
+        return static::$provider;
+    }
+
     /**
      * @param Request $request
      * @param Closure $next
@@ -50,6 +64,10 @@ class RoleMiddleware extends AbstractMiddleWare
      */
     public function handle(Request $request, Closure $next, string $role, string $permission = null)
     {
+        if (!isset(static::$provider)) {
+            static::setProvider(new DefaultRoleCheck());
+        }
+
         $profile = $request->user();
         if (!$profile) {
             throw new OAuthProfileException();
@@ -59,17 +77,8 @@ class RoleMiddleware extends AbstractMiddleWare
             $permission = strtolower($request->method());
         }
 
-        $permissionToCheck = 'req_' . $permission;
-        foreach ($profile->roles ?? [] as $availableRole) {
-            if ($availableRole->name === $role) {
-                $hasPermission = $availableRole->pivot->{$permissionToCheck} ?? false;
-
-                if ($hasPermission) {
-                    return $next($request);
-                }
-
-                throw new AclRequirePermissionMissingException(sprintf('User does not have required permission(%s) on role(%s)', $permission, $role), 403);
-            }
+        if (static::$provider->check($profile, $role, $permission)) {
+            return $next($request);
         }
 
         throw new AclRequireRoleMissingException(sprintf('User does not have required role(%s)', $role), 403);

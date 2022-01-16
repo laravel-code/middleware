@@ -129,3 +129,33 @@ app()->bind(ToDoService::class, function () {
     return new ToDoService(app()->get(OAuthClient::class));
 });
 ```
+
+
+## Changes to User model
+
+```php
+    protected $appends = ['roles'];
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class)
+            ->using(RoleUser::class)
+            ->withPivot([
+                'req_get',
+                'req_post',
+                'req_put',
+                'req_patch',
+                'req_delete',
+            ]);
+    }
+
+    public function getRolesAttribute()
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->getRelation('roles');
+    }
+
+```
