@@ -12,20 +12,17 @@ class ClientToken
 {
     public static string $cacheKey = 'oauth.clientToken';
 
-    public function __construct(
-    ) {
-        assert((bool) config('oauth.host'), 'oauth.host should be set in config/oauth.php');
-        assert((bool) config('oauth.path'), 'oauth.path should be set in config/oauth.php');
-        assert((bool) config('oauth.client_id'), 'oauth.client_id should be set in config/oauth.php');
-        assert((bool) config('oauth.client_secret'), 'oauth.client_secret should be set in config/oauth.php');
-        assert((bool) config('oauth.scopes'), 'oauth.scopes should be set in config/oauth.php');
-    }
-
     /**
      * @return mixed
      */
     public function getToken(): mixed
     {
+        assert((bool) config('oauth.host'), 'oauth.host should be set in config/oauth.php');
+        assert((bool) config('oauth.path'), 'oauth.path should be set in config/oauth.php');
+        assert((bool) config('oauth.client_id'), 'oauth.client_id should be set in config/oauth.php');
+        assert((bool) config('oauth.client_secret'), 'oauth.client_secret should be set in config/oauth.php');
+        assert((bool) config('oauth.scopes'), 'oauth.scopes should be set in config/oauth.php');
+
         return Cache::remember(self::$cacheKey, 600, function () {
             $response = $this->getResponse();
 

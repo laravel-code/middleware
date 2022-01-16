@@ -57,7 +57,7 @@ class OAuthClient
         /** @var Response $response */
         $response = call_user_func([Http::class, $method], $domain . $path, $params);
         if (in_array('application/json', $response->getHeader('Content-Type'))) {
-            return json_decode((string)$response->getBody());
+            return json_decode((string) $response->getBody());
         }
 
         return $response->getBody()->getContents();
