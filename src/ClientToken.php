@@ -43,12 +43,10 @@ class ClientToken
     {
         return Cache::remember('oauth.clientResponse', 600, function (): mixed {
             $response = Http::post(config('oauth.host') . config('oauth.path'), [
-                'form_params' => [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => config('oauth.client_id'),
-                    'client_secret' => config('oauth.client_secret'),
-                    'scope' => config('oauth.scopes'),
-                ],
+                'grant_type' => 'client_credentials',
+                'client_id' => config('oauth.client_id'),
+                'client_secret' => config('oauth.client_secret'),
+                'scope' => config('oauth.scopes'),
             ]);
 
             if (!stristr($response->header('Content-Type'), 'application/json')) {

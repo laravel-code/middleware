@@ -5,7 +5,6 @@ namespace LaravelCode\Middleware\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use LaravelCode\Middleware\Contracts\RoleCheckProviderContract;
-use LaravelCode\Middleware\Exceptions\AclRequirePermissionMissingException;
 use LaravelCode\Middleware\Exceptions\AclRequireRoleMissingException;
 use LaravelCode\Middleware\Exceptions\OAuthProfileException;
 use LaravelCode\Middleware\Providers\DefaultRoleCheck;
@@ -58,11 +57,10 @@ class RoleMiddleware extends AbstractMiddleWare
      * @param string $role
      * @param string|null $permission
      * @return mixed
-     * @throws AclRequirePermissionMissingException
      * @throws AclRequireRoleMissingException
      * @throws OAuthProfileException
      */
-    public function handle(Request $request, Closure $next, string $role, string $permission = null)
+    public function handle(Request $request, Closure $next, string $role, string $permission = null): mixed
     {
         if (!isset(static::$provider)) {
             static::setProvider(new DefaultRoleCheck());

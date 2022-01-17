@@ -32,6 +32,7 @@ Add the following fields in your ```.env```
 ```dotenv
 AUTHORIZATION_API_HOST=http://docker.for.mac.localhost
 AUTHORIZATION_API_TOKEN=/oauth/token
+AUTHORIZATION_API_JTI=/api/jti
 AUTHORIZATION_API_CLIENT_ID=3
 AUTHORIZATION_API_CLIENT_SECRET=""
 AUTHORIZATION_API_SCOPES=""
