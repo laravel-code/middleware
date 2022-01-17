@@ -20,15 +20,31 @@ class OAuthMiddleWare extends AbstractMiddleWare
         $token = $this->parser->parseToken();
         $profile = $this->getProfile($token->claims()->get('jti'));
 
-        if (empty($profile)) {
+        if (empty($profile->client ?? null) && empty($profile->user ?? null)) {
             throw new OAuthProfileException();
+        }
+
+        if (!empty($profile->user)) {
+            $request->setUserResolver(function () use ($profile) {
+                $usr = new User();
+                foreach (get_object_vars($profile->user) as $key => $value) {
+                    $usr->setAttribute($key, $value);
+                }
+                $usr->is_client = false;
+
+                return $usr;
+            });
+
+            return $next($request);
         }
 
         $request->setUserResolver(function () use ($profile) {
             $usr = new User();
-            foreach (get_object_vars($profile) as $key => $value) {
+            foreach (get_object_vars($profile->client) as $key => $value) {
                 $usr->setAttribute($key, $value);
             }
+
+            $usr->is_client = true;
 
             return $usr;
         });

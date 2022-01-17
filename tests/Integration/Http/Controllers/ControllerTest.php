@@ -15,6 +15,33 @@ class ControllerTest extends TestCase
 {
     use TestTrait;
 
+    public function testOauthMiddlewareAsClient()
+    {
+        \Http::fake([
+            'accounts.dummy/api/token' => \Http::response([
+                'access_token' => $this->createClientToken(),
+                'expires_in' => (new \DateTimeImmutable('+1 hour'))->getTimestamp(),
+
+            ], 200),
+            'accounts.dummy/api/jti/*' => \Http::response([
+                'client' => ['name' => 'Client', 'id' => 55],
+            ], 200, ['Headers']),
+        ]);
+
+        $response = $this->getJson('api/client-id', ['Authorization' => 'Bearer ' . $this->createUserToken()]);
+
+        $response->assertJson(['name' => 'Client', 'id' => 55, 'is_client' => true]);
+        $response->assertOk();
+
+        \Http::assertSent(function (Request $request) {
+            return $request->url() === 'https://accounts.dummy/api/token';
+        });
+
+        \Http::assertSent(function (Request $request) {
+            return strpos($request->url(), 'https://accounts.dummy/api/jti/') === 0;
+        });
+    }
+
     public function testOauthMiddleware()
     {
         \Http::fake([
@@ -24,7 +51,7 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
+                'user' => ['name' => 'John Doe'],
             ], 200, ['Headers']),
         ]);
 
@@ -50,7 +77,7 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
+                'user' => ['name' => 'John Doe'],
             ], 200, ['Headers']),
         ]);
 
@@ -76,7 +103,7 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
+                'user' => ['name' => 'John Doe'],
             ], 200, ['Headers']),
         ]);
 
@@ -102,15 +129,17 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
-                'roles' => [
-                    [
-                        'name' => 'admin',
-                        'pivot' => [
-                            'req_post' => true,
-                            'req_put' => true,
-                            'req_delete' => true,
-                            'req_get' => true,
+                'user' => [
+                    'name' => 'John Doe',
+                    'roles' => [
+                        [
+                            'name' => 'admin',
+                            'pivot' => [
+                                'req_post' => true,
+                                'req_put' => true,
+                                'req_delete' => true,
+                                'req_get' => true,
+                            ],
                         ],
                     ],
                 ],
@@ -140,15 +169,16 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
-                'roles' => [
-                    [
-                        'name' => 'admin',
-                        'pivot' => [
-                            'req_post' => true,
-                            'req_put' => true,
-                            'req_delete' => true,
-                            'req_get' => true,
+                'user' => ['name' => 'John Doe',
+                    'roles' => [
+                        [
+                            'name' => 'admin',
+                            'pivot' => [
+                                'req_post' => true,
+                                'req_put' => true,
+                                'req_delete' => true,
+                                'req_get' => true,
+                            ],
                         ],
                     ],
                 ],
@@ -178,15 +208,16 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
-                'roles' => [
-                    [
-                        'name' => 'admin',
-                        'pivot' => [
-                            'req_post' => true,
-                            'req_put' => true,
-                            'req_delete' => true,
-                            'req_get' => true,
+                'user' => ['name' => 'John Doe',
+                    'roles' => [
+                        [
+                            'name' => 'admin',
+                            'pivot' => [
+                                'req_post' => true,
+                                'req_put' => true,
+                                'req_delete' => true,
+                                'req_get' => true,
+                            ],
                         ],
                     ],
                 ],
@@ -216,15 +247,16 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
-                'roles' => [
-                    [
-                        'name' => 'admin',
-                        'pivot' => [
-                            'req_post' => true,
-                            'req_put' => true,
-                            'req_delete' => true,
-                            'req_get' => true,
+                'user' => ['name' => 'John Doe',
+                    'roles' => [
+                        [
+                            'name' => 'admin',
+                            'pivot' => [
+                                'req_post' => true,
+                                'req_put' => true,
+                                'req_delete' => true,
+                                'req_get' => true,
+                            ],
                         ],
                     ],
                 ],
@@ -254,15 +286,16 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
-                'roles' => [
-                    [
-                        'name' => 'admin',
-                        'pivot' => [
-                            'req_post' => false,
-                            'req_put' => false,
-                            'req_delete' => false,
-                            'req_get' => false,
+                'user' => ['name' => 'John Doe',
+                    'roles' => [
+                        [
+                            'name' => 'admin',
+                            'pivot' => [
+                                'req_post' => false,
+                                'req_put' => false,
+                                'req_delete' => false,
+                                'req_get' => false,
+                            ],
                         ],
                     ],
                 ],
@@ -292,7 +325,7 @@ class ControllerTest extends TestCase
 
             ], 200),
             'accounts.dummy/api/jti/*' => \Http::response([
-                'name' => 'John Doe',
+                'user' => ['name' => 'John Doe'],
             ], 200, ['Headers']),
         ]);
 
@@ -388,6 +421,10 @@ class ControllerTest extends TestCase
 
         $app['router']->middleware(['oauth', 'oauth.scope:profile'])->get('api/scope', function () {
             return response()->json(['ok' => true]);
+        });
+
+        $app['router']->middleware(['oauth'])->get('api/client-id', function (\Illuminate\Http\Request $request) {
+            return response()->json($request->user());
         });
 
         $app['router']->middleware(['oauth', 'oauth.role:admin'])->group(function () use ($app) {
