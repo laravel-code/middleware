@@ -7,14 +7,9 @@ class AccountService extends ApiService implements AccountsServiceInterface
     /**
      * @throws \Exception
      */
-    public function getProfile(string $token): mixed
+    public function getProfile(): mixed
     {
-        $headers = [
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ];
-
-        return $this->request('get', 'profile', [], [], $headers);
+        return $this->request('get', 'profile');
     }
 
     /**
