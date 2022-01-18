@@ -45,17 +45,15 @@ class OAuthClient
     {
         assert(in_array($method, ['get', 'post', 'put', 'delete']), sprintf('Unknown request method %s', $method));
 
-        $params = array_replace_recursive([
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->clientToken->getToken(),
-                'Accept' => 'application/json',
-                'X-USER-ID' => $this->request->user(),
-                'X-CLIENT-ID' => config('oauth.client_id'),
-            ],
-        ], $params);
+        $client = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->clientToken->getToken(),
+            'Accept' => 'application/json',
+            'X-USER-ID' => $this->request->user(),
+            'X-CLIENT-ID' => config('oauth.client_id'),
+        ]);
 
         /** @var Response $response */
-        $response = call_user_func([Http::class, $method], $domain . $path, $params);
+        $response = call_user_func([$client, $method], $domain . $path, $params);
         if (in_array('application/json', $response->getHeader('Content-Type'))) {
             return json_decode((string) $response->getBody());
         }
