@@ -3,6 +3,7 @@
 namespace TestApp\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use LaravelCode\Middleware\Http\Middleware\CheckClientCredentials;
 use LaravelCode\Middleware\Http\Middleware\OAuthMiddleWare;
 use LaravelCode\Middleware\Http\Middleware\RoleMiddleware;
 use LaravelCode\Middleware\Http\Middleware\ScopeMiddleware;
@@ -30,5 +31,6 @@ class Kernel extends HttpKernel
         'oauth' => OAuthMiddleWare::class,
         'oauth.scope' => ScopeMiddleware::class,
         'oauth.role' => RoleMiddleware::class,
+        'oauth.client' => CheckClientCredentials::class,
     ];
 }

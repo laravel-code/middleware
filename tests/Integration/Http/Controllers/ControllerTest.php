@@ -367,6 +367,36 @@ class ControllerTest extends TestCase
         });
     }
 
+    public function testClientMiddlewareWithClientToken()
+    {
+        $response = $this->get('api/oauth-server', ['Accept' => 'application/json', 'Authorization' => 'Bearer ' . $this->createClientToken()]);
+        $response->assertStatus(200);
+
+        $response->assertJson([
+            'ok' => 'true',
+            'user' => null,
+        ]);
+    }
+
+    public function testClientMiddlewareWithUserToken()
+    {
+        $response = $this->get('api/oauth-server', ['Accept' => 'application/json', 'Authorization' => 'Bearer ' . $this->createUserToken()]);
+        $response->assertStatus(200);
+
+        $response->assertJson([
+            'ok' => 'true',
+            'user' => [
+                'id' => 1,
+            ],
+        ]);
+    }
+
+    public function testClientMiddlewareFailed()
+    {
+        $response = $this->get('api/oauth-server', ['Accept' => 'application/json', 'Authorization' => 'Bearer ' . $this->createClientToken('profile', 'dc85ee7f-2491-4853-aaf6-5bb98be43985')]);
+        $response->assertStatus(401);
+    }
+
     public function tearDown(): void
     {
         parent::tearDown();
@@ -451,6 +481,15 @@ class ControllerTest extends TestCase
             });
         });
 
+        $app['router']->middleware(['oauth.client'])->group(function () use ($app) {
+            $app['router']->get('api/oauth-server', function (\Illuminate\Http\Request $request) {
+                return response()->json([
+                    'ok' => true,
+                    'user' => $request->user(),
+                ]);
+            });
+        });
+
         $app['config']->set('app.debug', true);
     }
 
@@ -488,7 +527,6 @@ class ControllerTest extends TestCase
     {
         return [
             'OAuthClient' => OAuthClient::class,
-            'HttpClient' => HttpClient::class,
             'ClientToken' => ClientToken::class,
         ];
     }

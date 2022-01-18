@@ -5,20 +5,21 @@ namespace Test;
 use Firebase\JWT\JWT;
 use LaravelCode\Middleware\Factories\HttpClient;
 use Lcobucci\JWT\Configuration;
-use Lcobucci\JWT\Signer\Key\LocalFileReference;
+use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
 
 trait TestTrait
 {
-    public function createClientToken($scopes = 'profile', $expires = null)
+    public function createClientToken($scopes = 'profile', $jti = null): string
     {
         $config = Configuration::forAsymmetricSigner(
             new Sha256(),
-            LocalFileReference::file(dirname(__FILE__) . '/oauth-private.key'),
-            LocalFileReference::file(dirname(__FILE__) . '/oauth-public.key'),
+            InMemory::file(dirname(__FILE__) . '/oauth-private.key'),
+            InMemory::file(dirname(__FILE__) . '/oauth-public.key'),
         );
 
         return $config->builder()
+            ->identifiedBy($jti ?? 'd8ebe93ce08347772a975e568264b685d391be7252872ab4697d4c98390e6d6d6c5ffb795ec1483a')
             ->issuedBy('accounts.com')
             ->permittedFor('accounts.com')
             ->issuedAt(new \DateTimeImmutable())
