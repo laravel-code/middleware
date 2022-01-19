@@ -5,6 +5,7 @@ namespace LaravelCode\Middleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use LaravelCode\Middleware\Exceptions\JsonException;
 use LaravelCode\Middleware\Exceptions\OauthClientContentTypeException;
 
@@ -26,9 +27,9 @@ class ClientToken
         return Cache::remember(self::$cacheKey, 600, function () {
             $response = $this->getResponse();
 
-            if ($response->expires_in <= time() + 60) {
+            if ($response->not_after <= time() + 60) {
+                Log::debug('Refreshing client token');
                 Cache::forget('oauth.clientResponse');
-
                 $response = $this->getResponse();
             }
 
@@ -42,6 +43,8 @@ class ClientToken
     private function getResponse(): mixed
     {
         return Cache::remember('oauth.clientResponse', 600, function (): mixed {
+            Log::debug('Requesting Client token.');
+
             $response = Http::post(config('oauth.host') . config('oauth.path'), [
                 'grant_type' => 'client_credentials',
                 'client_id' => config('oauth.client_id'),
@@ -53,18 +56,19 @@ class ClientToken
                 throw new OauthClientContentTypeException('JSON accepted but received ' . $response->header('Content-Type'), 500);
             }
 
-            $json = json_decode($response->body());
+            $json = json_decode($response->body(), true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new JsonException();
             }
 
-            if (!$json || !isset($json->access_token)) {
+            if (!$json || !isset($json['access_token'])) {
                 throw new AuthorizationException('Api client could not get authorized', 401);
             }
 
-            // @phpstan-ignore-next-line
-            return $json;
+            $json['not_after'] = $json['expires_in'] + time();
+
+            return (object) $json;
         });
     }
 }
