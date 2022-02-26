@@ -3,11 +3,10 @@
 namespace TestApp\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use LaravelCode\Middleware\Http\Middleware\CheckApiCredentials;
-use LaravelCode\Middleware\Http\Middleware\OAuth;
-use LaravelCode\Middleware\Http\Middleware\OAuthClient;
-use LaravelCode\Middleware\Http\Middleware\OAuthOrGuest;
-use LaravelCode\Middleware\Http\Middleware\OAuthUser;
+use LaravelCode\Middleware\Http\Middleware\CheckClientCredentials;
+use LaravelCode\Middleware\Http\Middleware\OAuthMiddleWare;
+use LaravelCode\Middleware\Http\Middleware\RoleMiddleware;
+use LaravelCode\Middleware\Http\Middleware\ScopeMiddleware;
 
 class Kernel extends HttpKernel
 {
@@ -29,10 +28,9 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'oauth.client' => OAuthClient::class,
-        'oauth.user' => OAuthUser::class,
-        'oauth' => OAuth::class,
-        'oauth.guest' => OAuthOrGuest::class,
-        'oauth.api' => CheckApiCredentials::class,
+        'oauth' => OAuthMiddleWare::class,
+        'oauth.scope' => ScopeMiddleware::class,
+        'oauth.role' => RoleMiddleware::class,
+        'oauth.client' => CheckClientCredentials::class,
     ];
 }

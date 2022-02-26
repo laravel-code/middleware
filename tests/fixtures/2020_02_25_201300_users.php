@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 class Users extends Migration
 {
@@ -65,6 +63,17 @@ class Users extends Migration
             'id' => 'd8ebe93ce08347772a975e568264b685d391be7252872ab4697d4c98390e6d6d6c5ffb795ec05b53',
             'user_id' => 1,
             'client_id' => 2,
+            'name' => '',
+            'scopes' => '["profile"]',
+            'revoked' => 0,
+            'created_at' => \Carbon\Carbon::now(),
+            'updated_at' => \Carbon\Carbon::now(),
+        ]);
+
+        \Db::table('oauth_access_tokens')->insert([
+            'id' => 'd8ebe93ce08347772a975e568264b685d391be7252872ab4697d4c98390e6d6d6c5ffb795ec1483a',
+            'user_id' => null,
+            'client_id' => 3,
             'name' => '',
             'scopes' => '["profile"]',
             'revoked' => 0,

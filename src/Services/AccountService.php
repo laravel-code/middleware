@@ -4,18 +4,24 @@ namespace LaravelCode\Middleware\Services;
 
 class AccountService extends ApiService implements AccountsServiceInterface
 {
-    public function getProfile(string $token)
+    /**
+     * @throws \Exception
+     */
+    public function getProfile(): mixed
     {
-        $headers = [
-            'Authorization' => 'Bearer '.$token,
-            'Accept' => 'application/json',
-        ];
-
-        return $this->request('get', 'profile', [], [], $headers);
+        return $this->request('get', 'profile');
     }
 
-    protected function getBaseUrl()
+    /**
+     * @throws \Exception
+     */
+    public function getByJti(string $jti): mixed
     {
-        return config('oauth.host').'/api/';
+        return $this->show('jti', $jti);
+    }
+
+    protected function getBaseUrl(): string
+    {
+        return config('oauth.host') . '/api/';
     }
 }

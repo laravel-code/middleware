@@ -22,12 +22,12 @@ abstract class ApiService
     }
 
     /**
-     * @param $resource
+     * @param string $resource
      * @param array $query
      * @return mixed
      * @throws Exception
      */
-    public function index($resource, array $query = [])
+    public function index(string $resource, array $query = []): mixed
     {
         $params = [
             'query' => $query,
@@ -42,55 +42,55 @@ abstract class ApiService
     abstract protected function getBaseUrl();
 
     /**
-     * @param $resource
-     * @param $id
+     * @param string $resource
+     * @param string|int $id
      * @param array $query
      * @return mixed
      * @throws Exception
      */
-    public function show($resource, $id, array $query = [])
+    public function show(string $resource, string|int $id, array $query = []): mixed
     {
         $params = [
             'query' => $query,
         ];
 
-        return $this->service->client('get', $this->getBaseUrl(), `$resource/$id`, $params);
+        return $this->service->client('get', $this->getBaseUrl(), "$resource/$id", $params);
     }
 
     /**
-     * @param $resource
-     * @param $id
+     * @param string $resource
+     * @param string|int $id
      * @return mixed
      * @throws Exception
      */
-    public function delete($resource, $id)
+    public function delete(string $resource, string|int $id): mixed
     {
-        return $this->service->client('delete', $this->getBaseUrl(), `$resource/$id`);
+        return $this->service->client('delete', $this->getBaseUrl(), "$resource/$id");
     }
 
     /**
-     * @param $resource
-     * @param $id
+     * @param string $resource
+     * @param string|int $id
      * @param array $formParams
      * @return mixed
      * @throws Exception
      */
-    public function update($resource, $id, array $formParams = [])
+    public function update(string $resource, string|int $id, array $formParams = []): mixed
     {
         $params = [
             'form_params' => $formParams,
         ];
 
-        return $this->service->client('put', $this->getBaseUrl(), `$resource/$id`, $params);
+        return $this->service->client('put', $this->getBaseUrl(), "$resource/$id", $params);
     }
 
     /**
-     * @param $resource
+     * @param string $resource
      * @param array $formParams
      * @return mixed
      * @throws Exception
      */
-    public function store($resource, array $formParams = [])
+    public function store(string $resource, array $formParams = []): mixed
     {
         $params = [
             'form_params' => $formParams,
@@ -100,15 +100,15 @@ abstract class ApiService
     }
 
     /**
-     * @param $method
-     * @param $path
+     * @param string $method
+     * @param string $path
      * @param array $query
      * @param array $formParams
      * @param array $headers
      * @return mixed
      * @throws Exception
      */
-    public function request($method, $path, array $query = [], array $formParams = [], array $headers = [])
+    public function request(string $method, string $path, array $query = [], array $formParams = [], array $headers = []): mixed
     {
         $params = [
             'query' => $query,

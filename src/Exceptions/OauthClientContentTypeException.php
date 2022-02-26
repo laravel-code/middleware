@@ -2,6 +2,6 @@
 
 namespace LaravelCode\Middleware\Exceptions;
 
-class OauthClientContentTypeException extends \Exception
+class OauthClientContentTypeException extends BaseException
 {
 }

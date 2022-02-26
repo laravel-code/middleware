@@ -4,13 +4,10 @@ namespace LaravelCode\Middleware\Http\Middleware;
 
 use Auth;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Contracts\Auth\Access\Authorizable;
-use Illuminate\Contracts\Auth\Factory;
-use Laravel\Passport\Http\Middleware\CheckClientCredentials;
+use Laravel\Passport\Http\Middleware\CheckClientCredentials as BaseCheckClientCredentials;
 use Request;
-use Session;
 
-class CheckApiCredentials extends CheckClientCredentials
+class CheckClientCredentials extends BaseCheckClientCredentials
 {
     /**
      * @param \Psr\Http\Message\ServerRequestInterface $psr
@@ -22,9 +19,6 @@ class CheckApiCredentials extends CheckClientCredentials
     {
         $token = $this->repository->find($psr->getAttribute('oauth_access_token_id'));
 
-        if (! $token) {
-            throw new AuthenticationException;
-        }
         $this->validateCredentials($token);
         $this->validateScopes($token, $scopes);
         $clientId = $psr->getAttribute('oauth_client_id', null);

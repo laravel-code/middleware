@@ -2,6 +2,6 @@
 
 namespace LaravelCode\Middleware\Exceptions;
 
-class OAuthScopeInvalid extends \Exception
+class OAuthScopeInvalid extends BaseException
 {
 }

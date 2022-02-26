@@ -2,29 +2,29 @@ name: PHP Composer
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, 2.0.x ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, 2.0.x ]
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php:
+          - 8.1
+          - 8.0
+          - 7.4
 
     steps:
     - uses: actions/checkout@v2
-
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: 7.4
-        extensions: xdebug
 
     - name: Validate composer.json and composer.lock
       run: composer validate
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
@@ -35,5 +35,5 @@ jobs:
     - name: Run test suite
       run: composer coverage
 
-    - name: Run coverage threshold >= 60%
-      run: php coverage-checker.php ./clover.xml 60
+    - name: Run coverage threshold >= 75%
+      run: php coverage-checker.php ./clover.xml 75

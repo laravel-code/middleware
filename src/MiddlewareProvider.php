@@ -2,11 +2,8 @@
 
 namespace LaravelCode\Middleware;
 
-use Cache;
-use Illuminate\Cache\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
-use LaravelCode\Middleware\Factories\HttpClient;
 use LaravelCode\Middleware\Factories\OAuthClient;
 use LaravelCode\Middleware\Services\AccountService;
 
@@ -33,15 +30,20 @@ class MiddlewareProvider extends ServiceProvider
             $this->publishes([$this->configPath() => config_path('oauth.php')], 'oauth');
         }
 
-        app()->bind(HttpClient::class, function () {
-            return (new HttpClient)->getClient();
+        app()->bind(ClientToken::class, function () {
+            return new ClientToken();
+        });
+
+        app()->bind(TokenParser::class, function () {
+            return new TokenParser(
+                app()->get(Request::class)
+            );
         });
 
         app()->bind(OAuthClient::class, function () {
             return new OAuthClient(
-                app()->get(HttpClient::class),
                 app()->get(Request::class),
-                app()->get(Repository::class)
+                app()->get(ClientToken::class)
             );
         });
 
@@ -50,8 +52,8 @@ class MiddlewareProvider extends ServiceProvider
         });
     }
 
-    protected function configPath()
+    protected function configPath(): string
     {
-        return __DIR__.'/config/oauth.php';
+        return __DIR__ . '/config/oauth.php';
     }
 }

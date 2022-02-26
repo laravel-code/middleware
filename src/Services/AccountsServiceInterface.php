@@ -4,8 +4,7 @@ namespace LaravelCode\Middleware\Services;
 
 interface AccountsServiceInterface
 {
-    /**
-     * @return mixed
-     */
-    public function getProfile(string $token);
+    public function getProfile(): mixed;
+
+    public function getByJti(string $jti): mixed;
 }
